@@ -24,6 +24,26 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cy);outline-off
 .b{align-self:flex-start;border-left:2px solid var(--cy);padding:2px 0 2px 12px}
 .b.er{border-color:var(--er);color:var(--er)}
 .cp{align-self:flex-start;font-size:14px;color:var(--cy);margin-left:12px}
+.tt{display:flex;align-items:center;gap:6px}
+.ic{padding:6px;border:0;line-height:0;border-radius:50%}
+.ic svg{fill:var(--tx)}
+#menu,#pm{position:fixed;z-index:30;background:var(--pn);border:1px solid var(--cy);border-radius:12px;padding:6px;min-width:190px}
+#menu[hidden],#pm[hidden]{display:none}
+#menu button,#pm button{display:block;width:100%;text-align:left;border:0;padding:12px}
+#menu button:disabled{color:var(--dim)}
+.scr{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.scr[hidden]{display:none}
+.bar{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--ln)}
+.bar h2{flex:1;font-size:18px;color:var(--cy)}
+.bd{flex:1;overflow-y:auto;padding:16px}
+.card{border:1px solid var(--cy);border-radius:14px;padding:16px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
+.seg button{padding:14px}
+.seg button[aria-pressed=true]{background:var(--bl);border-color:var(--bl);color:#fff;font-weight:600}
+.ct{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--ln);user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.av{width:40px;height:40px;border-radius:50%;background:#0d2a44;border:1px solid var(--bl);display:grid;place-items:center;color:var(--cy);font-weight:600}
+.ct .i{flex:1;min-width:0}.ct .i b{display:block;overflow-wrap:anywhere}.ct .i span{color:var(--dim);font-size:14px}
+.vac{text-align:center;padding:56px 16px;color:var(--dim)}.vac p{margin-bottom:16px;font-size:18px}
 .b.live::after{content:"";display:inline-block;width:8px;height:1em;margin-left:3px;vertical-align:-2px;background:var(--cy);animation:bl 1s steps(2) infinite}
 @keyframes bl{50%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.b.live::after{animation:none}}
@@ -36,12 +56,12 @@ dialog{margin:auto;width:min(92vw,420px);background:var(--pn);color:var(--tx);bo
 dialog::backdrop{background:#000a}
 dialog h2{font-size:18px;margin-bottom:10px;color:var(--cy)}
 dialog label{display:block;font-size:14px;color:var(--dim);margin:10px 0 4px}
-dialog input[type=text],dialog input[type=password]{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--ln);border-radius:8px;padding:9px;font:inherit}
+dialog input:not([type=checkbox]){width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--ln);border-radius:8px;padding:9px;font:inherit}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .row .w{grid-column:1/-1}
 #ok{font-size:14px;color:var(--cy);min-height:1.4em;margin-top:8px}
 </style></head><body>
-<header><div><h1>JHONNY</h1><div id="st"><i></i><span>En línea</span></div></div><button id="cfg">Ajustes</button></header>
+<header><div><div class="tt"><h1>JHONNY</h1><button id="mn" class="ic" aria-label="Menú" aria-haspopup="true"></button></div><div id="st"><i></i><span>En línea</span></div></div><button id="cfg">Ajustes</button></header>
 <main id="log" aria-live="polite"></main>
 <div id="chips"></div>
 <form id="f"><input id="q" autocomplete="off" placeholder="Escribe una orden" aria-label="Orden"><button id="go">Enviar</button></form>
@@ -57,6 +77,22 @@ dialog input[type=text],dialog input[type=password]{width:100%;background:var(--
 <button id="ex">Exportar memoria</button><button id="im">Importar memoria</button>
 <button id="bn">Borrar notas</button><button id="bh">Borrar historial</button>
 <button id="cl" class="w">Cerrar</button></div><div id="ok"></div></dialog>
+<div id="menu" hidden></div>
+<div id="pm" hidden><button id="pmd">Eliminar</button></div>
+<section class="scr" id="s-estudio" hidden>
+<div class="bar"><button class="bk">Atrás</button><h2>Modo estudio</h2></div>
+<div class="bd"><div class="card"><div style="color:var(--dim);font-size:14px">Modo activo</div><div id="ea" style="font-size:22px;color:var(--cy);font-weight:600"></div></div>
+<div class="seg"><button id="se0">Modo normal</button><button id="se1">Modo estudio</button></div>
+<p id="ed" style="color:var(--dim)"></p></div></section>
+<section class="scr" id="s-contactos" hidden>
+<div class="bar"><button class="bk">Atrás</button><h2>Contactos</h2><button id="cadd" aria-label="Agregar contacto" style="font-size:22px;line-height:1;padding:6px 14px">+</button></div>
+<div class="bd" id="clist"></div></section>
+<dialog id="cf"><h2>Eliminar contacto</h2><p id="cft" style="margin:6px 0 12px;white-space:pre-line"></p>
+<div class="row"><button id="cfn">Cancelar</button><button id="cfy" style="background:var(--er);border-color:var(--er);color:#000;font-weight:600">Eliminar</button></div></dialog>
+<dialog id="ad"><h2>Nuevo contacto</h2><label for="an">Nombre</label><input type="text" id="an" autocomplete="off">
+<label for="at">Número</label><input type="tel" id="at" autocomplete="off" placeholder="Con código de país">
+<div class="row"><button id="acn">Cancelar</button><button id="acy" style="background:var(--bl);border-color:var(--bl);color:#fff">Guardar</button></div>
+<div id="aer" style="color:var(--er);font-size:14px;min-height:1.4em;margin-top:8px"></div></dialog>
 <script>
 const $=s=>document.querySelector(s),S=localStorage,URL_='https://api.groq.com/openai/v1/chat/completions';
 const ld=(k,d)=>{try{return JSON.parse(S[k])||d}catch(e){return d}};
@@ -96,14 +132,14 @@ async function local(o){
  if(/^cancela (los |mis )?(recordatorios|temporizadores)/.test(n)){mem.recs=[];save();return 'Recordatorios cancelados, Eddy.'}
  if(/^(modo estudio|activa el modo estudio|activar modo estudio)$/.test(n)){cfg.estudio=n==='modo estudio'?!cfg.estudio:true;save();net();return cfg.estudio?'Modo estudio activado, Eddy. Explicaré paso a paso y te haré preguntas de práctica. Escribe modo normal para salir.':'Modo normal activado, Eddy.'}
  if(/^(modo normal|desactiva el modo estudio|salir del modo estudio|sal del modo estudio)$/.test(n)){cfg.estudio=false;save();net();return 'Modo normal activado, Eddy.'}
- let c;
+ let c;const cn=x=>norm(x.nombre).replace(/^(de|mi|la|el)\s+/,'').trim();
  if(c=o.match(/^(?:guarda|agrega|anota|registra)\s+(?:el\s+)?contacto\s+(.+?)\s+(\+?\d[\d\s-]{6,})$/i)){
-  const num=c[2].replace(/[\s-]/g,''),nom=c[1].trim();
-  mem.contactos=mem.contactos.filter(x=>norm(x.nombre)!==norm(nom));mem.contactos.push({nombre:nom,num});save();
+  const num=c[2].replace(/[\s-]/g,''),nom=c[1].trim().replace(/^(de|mi|la|el)\s+/i,'');
+  mem.contactos=mem.contactos.filter(x=>cn(x)!==norm(nom));mem.contactos.push({nombre:nom,num});save();
   return 'Contacto guardado: '+nom+' ('+num+'). Para WhatsApp, incluye el código de país.'}
  if(/^(mis contactos|contactos|que contactos tengo)$/.test(n))return mem.contactos.length?'Contactos:\n'+mem.contactos.map((x,i)=>(i+1)+'. '+x.nombre+': '+x.num).join('\n'):'No tienes contactos guardados, Eddy. Usa: guarda contacto mamá 5512345678';
- if(c=n.match(/^(?:borra|elimina)\s+(?:el\s+)?contacto\s+(.+)$/)){const k=mem.contactos.length;mem.contactos=mem.contactos.filter(x=>norm(x.nombre)!==c[1].trim());save();return k>mem.contactos.length?'Contacto eliminado, Eddy.':'No encontré ese contacto, Eddy.'}
- const buscar=t=>{const q=norm(t).trim();return [...mem.contactos].sort((a,b)=>b.nombre.length-a.nombre.length).find(x=>q===norm(x.nombre)||q.includes(norm(x.nombre)))};
+ if(c=n.match(/^(?:borra|elimina)\s+(?:el\s+)?contacto\s+(.+)$/)){const k=mem.contactos.length;const q=c[1].trim().replace(/^(de|mi|la|el)\s+/,'');mem.contactos=mem.contactos.filter(x=>cn(x)!==q);save();return k>mem.contactos.length?'Contacto eliminado, Eddy.':'No encontré ese contacto, Eddy.'}
+ const buscar=t=>{const q=norm(t).trim().replace(/^(a|al|de|mi|la|el)\s+/,'');return [...mem.contactos].sort((a,b)=>b.nombre.length-a.nombre.length).find(x=>q===cn(x)||q.includes(cn(x)))};
  if(c=n.match(/^(?:llama|llamar|marca|telefonea)(?:\s+a(?:l)?)?\s+(.+)$/)){const x=buscar(c[1]);if(!x)return 'No tengo ese contacto, Eddy. Guárdalo con: guarda contacto nombre número.';location.href='tel:'+x.num;return 'Abriendo el marcador para llamar a '+x.nombre+'.'}
  if(/^(manda|envia|escribe|mensaje|sms|whatsapp)/.test(n)&&o.includes(':')&&/\b(a|al|para)\b/.test(n.split(':')[0])){
   const i=o.indexOf(':'),izq=o.slice(0,i),txt=o.slice(i+1).trim(),x=buscar(izq);
@@ -183,6 +219,45 @@ addEventListener('online',net);addEventListener('offline',net);net();
 mem.historial.slice(-6).forEach(h=>add(h.role==='user'?'u':'b',h.content));
 say(mem.historial.length?'De vuelta, Eddy.':'Buenas, Eddy. Jhonny en línea.');
 if(!cfg.key)setTimeout(()=>{$('#hint').textContent='Para empezar, escribe tu clave de Groq. Se guarda solo en este teléfono.';$('#dlg').showModal()},300);
+const DOTS='<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="3" r="2"/><circle cx="10" cy="10" r="2"/><circle cx="10" cy="17" r="2"/></svg>';
+$('#mn').innerHTML=DOTS;
+let scr=null,sel=-1,lpT;
+function abrir(id){cerrarMenu();$('#s-'+id).hidden=false;scr=id;history.pushState({s:id},'');id==='estudio'?pEst():pCon()}
+addEventListener('popstate',()=>{if(scr){$('#s-'+scr).hidden=true;scr=null}});
+document.querySelectorAll('.bk').forEach(b=>b.onclick=()=>history.back());
+const MENU=[['Modo estudio',()=>abrir('estudio')],['Contactos',()=>abrir('contactos')]];
+const mn=$('#menu');
+MENU.forEach(([t,f])=>{const b=document.createElement('button');b.textContent=t;b.onclick=f;mn.append(b)});
+const pr=document.createElement('button');pr.textContent='Próximamente';pr.disabled=true;mn.append(pr);
+function cerrarMenu(){mn.hidden=true;$('#pm').hidden=true}
+$('#mn').onclick=e=>{e.stopPropagation();const o=!mn.hidden;cerrarMenu();if(o)return;const r=e.currentTarget.getBoundingClientRect();mn.style.top=r.bottom+6+'px';mn.style.left=Math.max(8,r.left)+'px';mn.hidden=false};
+document.addEventListener('click',cerrarMenu);
+
+function pEst(){const e=!!cfg.estudio;$('#ea').textContent=e?'Estudio':'Normal';$('#se0').setAttribute('aria-pressed',!e);$('#se1').setAttribute('aria-pressed',e);
+ $('#ed').textContent=e?'Jhonny explica paso a paso, se extiende más y te hace preguntas de práctica.':'Jhonny responde de forma breve, en una a tres frases.'}
+const setE=v=>{cfg.estudio=v;save();net();pEst()};
+$('#se0').onclick=()=>setE(false);$('#se1').onclick=()=>setE(true);
+
+function pCon(){const L=$('#clist'),c=mem.contactos;L.innerHTML='';$('#cadd').hidden=!c.length;
+ if(!c.length){L.innerHTML='<div class="vac"><p>Aún no tienes contactos</p><button id="c1">Agregar primer contacto</button></div>';$('#c1').onclick=nuevo;return}
+ c.forEach((x,i)=>{const r=document.createElement('div');r.className='ct';
+  r.innerHTML='<div class="av"></div><div class="i"><b></b><span></span></div><button class="ic" aria-label="Más opciones">'+DOTS+'</button>';
+  r.querySelector('.av').textContent=(x.nombre[0]||'?').toUpperCase();r.querySelector('b').textContent=x.nombre;r.querySelector('span').textContent=x.num;
+  const d=r.querySelector('button');
+  d.onclick=e=>{e.stopPropagation();const b=d.getBoundingClientRect(),m=$('#pm');m.style.top=b.bottom+4+'px';m.style.left=Math.max(8,b.right-190)+'px';m.hidden=false;sel=i};
+  r.onpointerdown=e=>{if(e.target.closest('button'))return;lpT=setTimeout(()=>{navigator.vibrate&&navigator.vibrate(30);pedir(i)},600)};
+  ['pointerup','pointercancel','pointerleave'].forEach(v=>r.addEventListener(v,()=>clearTimeout(lpT)));
+  r.oncontextmenu=e=>e.preventDefault();L.append(r)})}
+function pedir(i){sel=i;$('#cft').textContent='¿Seguro que quieres eliminar este contacto?\n'+mem.contactos[i].nombre;$('#cf').showModal()}
+$('#pmd').onclick=()=>pedir(sel);
+$('#cfn').onclick=()=>$('#cf').close();
+$('#cfy').onclick=()=>{mem.contactos.splice(sel,1);save();$('#cf').close();pCon()};
+function nuevo(){$('#an').value='';$('#at').value='';$('#aer').textContent='';$('#ad').showModal()}
+$('#cadd').onclick=nuevo;$('#acn').onclick=()=>$('#ad').close();
+$('#acy').onclick=()=>{const n=$('#an').value.trim().replace(/^(de|mi|la|el)\s+/i,''),t=$('#at').value.replace(/[\s-]/g,'');
+ if(!n)return $('#aer').textContent='Escribe un nombre.';
+ if(!/^\+?\d{7,}$/.test(t))return $('#aer').textContent='Escribe un número válido, de 7 dígitos o más.';
+ mem.contactos=mem.contactos.filter(x=>norm(x.nombre).replace(/^(de|mi|la|el)\s+/,'')!==norm(n));mem.contactos.push({nombre:n,num:t});save();$('#ad').close();pCon()};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
 tick();
 </script></body></html>
