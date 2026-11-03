@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050b14">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<title>Jhonny</title>
+<style>
+:root{--bg:#050b14;--pn:#0a1626;--ln:#12384f;--cy:#4de3ff;--bl:#2a8cff;--tx:#d8f4ff;--dim:#6f93a8;--er:#ff7b7b}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:radial-gradient(120% 60% at 50% -10%,#0b2a44,var(--bg) 60%);color:var(--tx);font:16px/1.5 system-ui,sans-serif;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--ln)}
+h1{font-size:20px;font-weight:600;letter-spacing:.35em;color:var(--cy)}
+#st{font-size:12px;color:var(--dim);display:flex;align-items:center;gap:6px}
+#st i{width:8px;height:8px;border-radius:50%;background:var(--cy);box-shadow:0 0 8px var(--cy)}
+#st.off i{background:var(--er);box-shadow:0 0 8px var(--er)}
+button{font:inherit;color:var(--tx);background:none;border:1px solid var(--ln);border-radius:8px;padding:8px 12px;cursor:pointer}
+button:active{background:var(--ln)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
+#log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.m{max-width:88%;white-space:pre-wrap;overflow-wrap:anywhere}
+.u{align-self:flex-end;background:#0d2a44;border:1px solid var(--bl);border-radius:14px 14px 2px 14px;padding:8px 12px}
+.b{align-self:flex-start;border-left:2px solid var(--cy);padding:2px 0 2px 12px}
+.b.er{border-color:var(--er);color:var(--er)}
+.b.live::after{content:"";display:inline-block;width:8px;height:1em;margin-left:3px;vertical-align:-2px;background:var(--cy);animation:bl 1s steps(2) infinite}
+@keyframes bl{50%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.b.live::after{animation:none}}
+#chips{display:flex;gap:8px;overflow-x:auto;padding:8px 16px}
+#chips button{white-space:nowrap;font-size:14px;border-radius:99px;color:var(--cy)}
+form{display:flex;gap:8px;padding:8px 16px 12px}
+#q{flex:1;min-width:0;background:var(--pn);color:var(--tx);border:1px solid var(--ln);border-radius:99px;padding:10px 16px;font:inherit}
+#go{background:var(--bl);border-color:var(--bl);border-radius:99px;color:#fff;font-weight:600}
+dialog{margin:auto;width:min(92vw,420px);background:var(--pn);color:var(--tx);border:1px solid var(--cy);border-radius:14px;padding:18px}
+dialog::backdrop{background:#000a}
+dialog h2{font-size:18px;margin-bottom:10px;color:var(--cy)}
+dialog label{display:block;font-size:14px;color:var(--dim);margin:10px 0 4px}
+dialog input[type=text],dialog input[type=password]{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--ln);border-radius:8px;padding:9px;font:inherit}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.row .w{grid-column:1/-1}
+#ok{font-size:14px;color:var(--cy);min-height:1.4em;margin-top:8px}
+</style></head><body>
+<header><div><h1>JHONNY</h1><div id="st"><i></i><span>En línea</span></div></div><button id="cfg">Ajustes</button></header>
+<main id="log" aria-live="polite"></main>
+<div id="chips"></div>
+<form id="f"><input id="q" autocomplete="off" placeholder="Escribe una orden" aria-label="Orden"><button id="go">Enviar</button></form>
+<input type="file" id="cam" accept="image/*" capture="environment" hidden>
+<input type="file" id="imp" accept=".json,application/json" hidden>
+<dialog id="dlg"><h2>Ajustes</h2>
+<p id="hint" style="font-size:14px;color:var(--dim)">La clave se guarda solo en este teléfono.</p>
+<label for="k">Clave de Groq</label><input type="password" id="k" autocomplete="off">
+<label for="mo">Modelo</label><input type="text" id="mo">
+<div class="row">
+<button id="sv" class="w" style="background:var(--bl);border-color:var(--bl);color:#fff">Guardar</button>
+<button id="nt">Activar avisos</button><button id="te">Probar aviso</button>
+<button id="ex">Exportar memoria</button><button id="im">Importar memoria</button>
+<button id="bn">Borrar notas</button><button id="bh">Borrar historial</button>
+<button id="cl" class="w">Cerrar</button></div><div id="ok"></div></dialog>
+<script>
+const $=s=>document.querySelector(s),S=localStorage,URL_='https://api.groq.com/openai/v1/chat/completions';
+const ld=(k,d)=>{try{return JSON.parse(S[k])||d}catch(e){return d}};
+let cfg=ld('cfg',{key:'',model:'openai/gpt-oss-120b'}),mem=ld('mem',{datos:[],historial:[],recs:[]}),busy=false;
+const save=()=>{S.cfg=JSON.stringify(cfg);S.mem=JSON.stringify(mem)};
+const SIS='Eres Jhonny, el asistente personal de Eddy, inspirado en JARVIS de Iron Man. Tu personalidad es formal y seria, sin bromas ni humor forzado, pero no excesivamente ceremoniosa: a veces puedes ser cercano. El nombre de tu usuario es Eddy, úsalo de vez en cuando. Responde siempre en español correcto y claro, sin groserías ni informalidad aunque Eddy las use. Reglas importantes: 1. No des consejos médicos, legales o financieros serios; recomienda hablar con un adulto o profesional. 2. En tareas escolares, no des solo la respuesta final: explica el procedimiento para que Eddy aprenda. 3. No opines sobre temas personales o conflictos de Eddy a menos que él te lo pida explícitamente. 4. No finjas ser una persona real ni tener sentimientos o cuerpo; eres una IA que ayuda a Eddy. Si no sabes algo o no tienes esa información (clima en tiempo real, noticias actuales, datos recientes), dilo claramente en vez de inventar una respuesta. No tienes acceso a internet en vivo ni puedes ver la pantalla del celular, solo lo que te escriben. IMPORTANTE: la pantalla es de texto plano, sin soporte para formato. No uses nunca asteriscos (** o *), numerales (#), guiones de lista (-), ni notación LaTeX como \\( \\) o \\[ \\]. Para matemáticas, usa símbolos normales: *, /, +, -, ^, paréntesis. Para listas, usa números seguidos de punto. No uses emojis ni emoticonos bajo ninguna circunstancia. Sé muy breve: responde en 1 a 3 frases como máximo, salvo que Eddy pida explícitamente más detalle o una explicación larga. Nunca des contexto, advertencias ni explicaciones que no se pidieron.';
+const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const fd=t=>new Date(t).toLocaleString('es',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
+const log=$('#log'),down=()=>log.scrollTop=log.scrollHeight;
+function add(c,t){const e=document.createElement('div');e.className='m '+c;e.textContent=t;log.append(e);down();return e}
+const say=t=>add('b',t);
+function msg(t){$('#ok').textContent=t}
+
+async function notify(t){try{if(Notification.permission==='granted'){const r=await navigator.serviceWorker.ready;await r.showNotification('Jhonny',{body:t,icon:'icon-192.png',vibrate:[200,100,200]});return true}}catch(e){}return false}
+function beep(){try{const a=new AudioContext(),o=a.createOscillator();o.frequency.value=880;o.connect(a.destination);o.start();o.stop(a.currentTime+.4)}catch(e){}}
+function tick(){const n=Date.now(),v=mem.recs.filter(r=>r.due<=n);if(!v.length)return;mem.recs=mem.recs.filter(r=>r.due>n);save();
+ v.forEach(r=>{const t=r.texto||'Temporizador finalizado';say('Recordatorio: '+t);notify(t);navigator.vibrate&&navigator.vibrate([300,150,300]);beep()})}
+setInterval(tick,1000);document.addEventListener('visibilitychange',tick);
+
+const APPS={whatsapp:'com.whatsapp',facebook:'com.facebook.lite','facebook lite':'com.facebook.lite',instagram:'com.instagram.android','lark player':'com.dywx.larkplayer',lark:'com.dywx.larkplayer'};
+const dur=s=>s>=3600?Math.round(s/360)/10+' h':s>=60?Math.ceil(s/60)+' min':s+' s';
+
+async function local(o){
+ const n=norm(o).trim(),w=n.split(/\s+/).length;let m;
+ if(/^(recuerdame|avisame|recordatorio|temporizador|pon un temporizador|programa)/.test(n)&&(m=n.match(/(\d+)\s*(segundo|minuto|hora)s?/))){
+  const s=+m[1]*{segundo:1,minuto:60,hora:3600}[m[2]];
+  const t=o.slice(m.index+m[0].length).trim().replace(/^(que|para)\s+/i,'');
+  if(Notification.permission==='default')Notification.requestPermission();
+  mem.recs.push({id:Date.now(),due:Date.now()+s*1000,texto:t});save();
+  return 'Listo, Eddy. Aviso en '+dur(s)+(t?': '+t:'')+'. Mantén Jhonny abierto en segundo plano.'}
+ if(/^(que recordatorios|mis recordatorios|recordatorios|que temporizadores)/.test(n))
+  return mem.recs.length?'Pendientes:\n'+mem.recs.map((r,i)=>(i+1)+'. '+(r.texto||'Temporizador')+' (en '+dur(Math.max(1,Math.round((r.due-Date.now())/1000)))+')').join('\n'):'No hay recordatorios pendientes, Eddy.';
+ if(/^cancela (los |mis )?(recordatorios|temporizadores)/.test(n)){mem.recs=[];save();return 'Recordatorios cancelados, Eddy.'}
+ const D=['recuerda que ','anota que ','no olvides que ','guarda que '].find(d=>n.startsWith(d));
+ if(D){mem.datos.push({texto:o.slice(D.length).trim(),t:Date.now()});save();return 'Anotado, Eddy.'}
+ if(/que recuerdas|mis notas/.test(n)&&w<=5)return mem.datos.length?'Recuerdo:\n'+mem.datos.map((d,i)=>(i+1)+'. '+d.texto+' ('+fd(d.t)+')').join('\n'):'Aún no tengo notas guardadas, Eddy.';
+ if(n.startsWith('olvida la nota ')){const k=parseInt(n.split(/\s+/).pop());if(!k)return 'Dime el número de la nota, Eddy.';if(k<1||k>mem.datos.length)return 'Esa nota no existe, Eddy.';mem.datos.splice(k-1,1);save();return 'Nota '+k+' eliminada, Eddy.'}
+ if(n==='olvida todo'||n==='borra tu memoria'){mem.datos=[];mem.historial=[];save();return 'He borrado todas mis notas y mi historial, Eddy.'}
+ if(/\bborra/.test(n)&&/conversa|historial|mensaje|chat/.test(n)){
+  const a=new Date(),L=/hora/.test(n)?a-36e5:/hoy/.test(n)?new Date(a.getFullYear(),a.getMonth(),a.getDate()).getTime():/semana/.test(n)?a-6048e5:/\bmes\b/.test(n)?a-2592e6:0;
+  if(!L)return 'Dime el período: hoy, esta semana, el mes o la última hora.';
+  const x=mem.historial.length;mem.historial=mem.historial.filter(h=>h.t<L);save();return 'Eliminé '+(x-mem.historial.length)+' mensajes de ese período, Eddy.'}
+ if(/^(notifica|avisame) que /.test(n)){const t=o.split(/que /i).slice(1).join('que ').trim();return await notify(t)?'Notificación enviada, Eddy.':'Activa los avisos en Ajustes primero, Eddy.'}
+ if(n.startsWith('copia esto')){const t=o.replace(/^copia esto:?\s*/i,'');try{await navigator.clipboard.writeText(t);return 'Copiado al portapapeles, Eddy.'}catch(e){return 'No pude copiar eso, Eddy.'}}
+ if(/que tengo copiado|lee el portapapeles/.test(n)){try{const t=(await navigator.clipboard.readText()).trim();return t?'Tienes copiado: '+t:'No hay nada copiado, Eddy.'}catch(e){return 'No pude leer el portapapeles, Eddy. Revisa el permiso del navegador.'}}
+ if(w>8)return null;
+ if(/que hora|la hora/.test(n)||n==='hora')return 'Son las '+new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit',hour12:false});
+ if(/que fecha|la fecha|que dia es|dia es hoy/.test(n))return 'Hoy es '+new Date().toLocaleDateString('es',{day:'2-digit',month:'2-digit',year:'numeric'});
+ if(/bateria/.test(n)){try{const b=await navigator.getBattery();return 'Batería al '+Math.round(b.level*100)+' por ciento, '+(b.charging?'cargando':'sin cargar')+'.'}catch(e){return 'No pude leer la batería, Eddy.'}}
+ if(/\bvibra/.test(n))return navigator.vibrate&&navigator.vibrate(500)?'Listo, Eddy.':'Este dispositivo no permite vibrar desde el navegador.';
+ if(/^abre (la )?camara/.test(n)){$('#cam').click();return 'Abriendo la cámara.'}
+ if(n.startsWith('abre ')){const a=n.slice(5).trim(),p=APPS[a];if(!p)return 'No tengo registrada esa aplicación, Eddy.';location.href='intent://#Intent;package='+p+';end';return 'Abriendo '+a+'.'}
+ return null}
+
+function fail(e,t){e.classList.remove('live');e.classList.add('er');e.textContent=t}
+async function ia(texto){
+ if(!cfg.key){say('Falta la clave de Groq. Escríbela en Ajustes.');$('#dlg').showModal();return}
+ mem.historial.push({role:'user',content:texto,t:Date.now()});
+ const ms=[{role:'system',content:SIS},...mem.historial.slice(-20).map(({role,content})=>({role,content}))];
+ const el=add('b live','');
+ for(let i=0;i<3;i++){
+  try{
+   const r=await fetch(URL_,{method:'POST',headers:{Authorization:'Bearer '+cfg.key,'Content-Type':'application/json'},body:JSON.stringify({model:cfg.model,messages:ms,stream:true})});
+   if(r.status===503){await sleep(3000);continue}
+   const bad=r.status===401?'La clave de Groq no es válida. Corrígela en Ajustes.':r.status===429?'Se alcanzó el límite de uso de Groq. Espera un momento e intenta de nuevo.':!r.ok?'Groq respondió con el error '+r.status+'.':'';
+   if(bad){mem.historial.pop();fail(el,bad);return}
+   const rd=r.body.getReader(),dc=new TextDecoder();let buf='',out='';
+   for(;;){const{done,value}=await rd.read();if(done)break;buf+=dc.decode(value,{stream:true});const ls=buf.split('\n');buf=ls.pop();
+    for(const l of ls){if(!l.startsWith('data: '))continue;const d=l.slice(6).trim();if(d==='[DONE]')continue;try{out+=JSON.parse(d).choices[0].delta.content||'';el.textContent=out;down()}catch(e){}}}
+   el.classList.remove('live');out=out.trim()||'Sin respuesta, Eddy. Intenta de nuevo.';el.textContent=out;
+   mem.historial.push({role:'assistant',content:out,t:Date.now()});mem.historial=mem.historial.slice(-60);save();return
+  }catch(e){await sleep(1500)}
+ }
+ mem.historial.pop();fail(el,'No pude conectar con Groq. Revisa tu internet o intenta de nuevo.')}
+
+async function enviar(t){if(busy||!t)return;busy=true;add('u',t);
+ try{const r=await local(t);if(r!=null)say(r);else await ia(t)}catch(e){say('Ocurrió un error, Eddy.')}
+ busy=false;save()}
+$('#f').onsubmit=e=>{e.preventDefault();const t=$('#q').value.trim();$('#q').value='';enviar(t)};
+[['Hora','qué hora es'],['Fecha','qué fecha es'],['Batería','batería'],['Notas','qué recuerdas'],['Recordatorios','qué recordatorios tengo'],['Cámara','abre cámara']].forEach(([a,c])=>{const b=document.createElement('button');b.textContent=a;b.type='button';b.onclick=()=>enviar(c);$('#chips').append(b)});
+
+$('#cfg').onclick=()=>{$('#k').value=cfg.key;$('#mo').value=cfg.model;msg('');$('#dlg').showModal()};
+$('#cl').onclick=()=>$('#dlg').close();
+$('#sv').onclick=()=>{cfg.key=$('#k').value.trim();cfg.model=$('#mo').value.trim()||'openai/gpt-oss-120b';save();msg('Guardado.');if(cfg.key)setTimeout(()=>$('#dlg').close(),600)};
+$('#nt').onclick=async()=>{if(!('Notification' in window))return msg('Este navegador no admite avisos.');const p=await Notification.requestPermission();msg(p==='granted'?'Avisos activados.':'Avisos bloqueados. Actívalos en los permisos del sitio.')};
+$('#te').onclick=async()=>msg(await notify('Prueba de aviso.')?'Aviso enviado.':'Primero activa los avisos.');
+$('#ex').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(mem,null,2)],{type:'application/json'}));a.download='jhonny-memoria-'+new Date().toISOString().slice(0,10)+'.json';a.click();msg('Memoria exportada.')};
+$('#im').onclick=()=>$('#imp').click();
+$('#imp').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const j=JSON.parse(await f.text());
+ const T=x=>typeof x==='number'?x:(Date.parse(String(x).replace(' ','T'))||0);
+ const dt=Array.isArray(j.datos)?j.datos:Object.values(j.datos||{}).map(v=>typeof v==='string'?{texto:v,t:0}:{texto:v.texto,t:v.t||T(v.fecha)});
+ const hs=(j.historial||[]).map(h=>({role:h.role,content:h.content,t:h.t||T(h.fecha)}));
+ mem={datos:dt,historial:hs,recs:Array.isArray(j.recs)?j.recs:[]};save();msg('Memoria importada: '+dt.length+' notas, '+hs.length+' mensajes.')}catch(x){msg('El archivo no es una memoria válida.')}e.target.value=''};
+$('#bn').onclick=()=>{mem.datos=[];save();msg('Notas borradas.')};
+$('#bh').onclick=()=>{mem.historial=[];save();log.innerHTML='';msg('Historial borrado.')};
+$('#cam').onchange=e=>{if(e.target.files[0])say('Foto capturada, Eddy. No se guarda en Jhonny.');e.target.value=''};
+
+const net=()=>{$('#st').classList.toggle('off',!navigator.onLine);$('#st span').textContent=navigator.onLine?'En línea':'Sin conexión'};
+addEventListener('online',net);addEventListener('offline',net);net();
+mem.historial.slice(-6).forEach(h=>add(h.role==='user'?'u':'b',h.content));
+say(mem.historial.length?'De vuelta, Eddy.':'Buenas, Eddy. Jhonny en línea.');
+if(!cfg.key)setTimeout(()=>{$('#hint').textContent='Para empezar, escribe tu clave de Groq. Se guarda solo en este teléfono.';$('#dlg').showModal()},300);
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+tick();
+</script></body></html>
