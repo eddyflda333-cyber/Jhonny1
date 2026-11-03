@@ -81,8 +81,9 @@ const dur=s=>s>=3600?Math.round(s/360)/10+' h':s>=60?Math.ceil(s/60)+' min':s+' 
 
 async function local(o){
  const n=norm(o).trim(),w=n.split(/\s+/).length;let m;
- if(/^(recuerdame|avisame|recordatorio|temporizador|pon un temporizador|programa)/.test(n)&&(m=n.match(/(\d+)\s*(segundo|minuto|hora)s?/))){
-  const s=+m[1]*{segundo:1,minuto:60,hora:3600}[m[2]];
+ if(/^(recuerdame|avisame|recordatorio|temporizador|pon un temporizador|programa)/.test(n)&&(m=n.match(/\b(\d+|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|quince|veinte|treinta)\s*(segundo|minuto|hora)s?/))){
+  const NUM={un:1,una:1,uno:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10,quince:15,veinte:20,treinta:30};
+  const s=(+m[1]||NUM[m[1]])*{segundo:1,minuto:60,hora:3600}[m[2]];
   const t=o.slice(m.index+m[0].length).trim().replace(/^(que|para)\s+/i,'');
   if(Notification.permission==='default')Notification.requestPermission();
   mem.recs.push({id:Date.now(),due:Date.now()+s*1000,texto:t});save();
