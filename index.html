@@ -44,6 +44,16 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cy);outline-off
 .av{width:40px;height:40px;border-radius:50%;background:#0d2a44;border:1px solid var(--bl);display:grid;place-items:center;color:var(--cy);font-weight:600}
 .ct .i{flex:1;min-width:0}.ct .i b{display:block;overflow-wrap:anywhere}.ct .i span{color:var(--dim);font-size:14px}
 .vac{text-align:center;padding:56px 16px;color:var(--dim)}.vac p{margin-bottom:16px;font-size:18px}
+#intro{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s}
+#intro.out{opacity:0;pointer-events:none}
+#intro svg{width:200px;height:200px}
+#intro b{margin-top:14px;font-weight:600;font-size:20px;letter-spacing:.35em;padding-left:.35em;color:var(--cy)}
+#intro p{color:var(--dim);font-size:14px;margin-top:6px}
+#intro .d{display:flex;gap:8px;margin-top:14px}
+#intro .d i{width:6px;height:6px;border-radius:50%;background:var(--cy);animation:pt 1.2s infinite}
+#intro .d i:nth-child(2){animation-delay:.2s}#intro .d i:nth-child(3){animation-delay:.4s}
+@keyframes pt{0%,100%{opacity:.2}50%{opacity:1}}
+@media(prefers-reduced-motion:reduce){#intro .d i{animation:none;opacity:.6}}
 .b.live::after{content:"";display:inline-block;width:8px;height:1em;margin-left:3px;vertical-align:-2px;background:var(--cy);animation:bl 1s steps(2) infinite}
 @keyframes bl{50%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.b.live::after{animation:none}}
@@ -61,6 +71,12 @@ dialog input:not([type=checkbox]){width:100%;background:var(--bg);color:var(--tx
 .row .w{grid-column:1/-1}
 #ok{font-size:14px;color:var(--cy);min-height:1.4em;margin-top:8px}
 </style></head><body>
+<div id="intro" role="status" aria-label="Iniciando Jhonny"><svg viewBox="-80 -80 160 160" aria-hidden="true"><g><animateTransform attributeName="transform" type="rotate" from="-90" to="270" dur="8s" repeatCount="indefinite"/><circle r="70" fill="none" stroke="#4de3ff" stroke-width="6" stroke-dasharray="48 7"/></g>
+<circle r="52" fill="none" stroke="#2a8cff" stroke-width="3"/>
+<g><animateTransform attributeName="transform" type="rotate" from="380" to="20" dur="5s" repeatCount="indefinite"/><circle r="36" fill="none" stroke="#4de3ff" stroke-width="2" stroke-dasharray="60 11.6"/></g>
+<circle r="22" fill="#4de3ff"><animate attributeName="r" values="22;24;22" dur="2s" repeatCount="indefinite"/></circle>
+<path d="M-6 -9H8M2 -9V3Q2 9 -4 9Q-9 9 -9 5" fill="none" stroke="#050b14" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg><b>JHONNY</b><p>Iniciando sistemas</p><div class="d"><i></i><i></i><i></i></div></div>
+<script>(function(){var e=document.getElementById('intro');if(matchMedia('(prefers-reduced-motion:reduce)').matches)e.querySelectorAll('animate,animateTransform').forEach(function(a){a.remove()});function f(){e.classList.add('out');setTimeout(function(){e.remove()},500)}var t=setTimeout(f,2200);e.onclick=function(){clearTimeout(t);f()}})()</script>
 <header><div><div class="tt"><h1>JHONNY</h1><button id="mn" class="ic" aria-label="Menú" aria-haspopup="true"></button></div><div id="st"><i></i><span>En línea</span></div></div><button id="cfg">Ajustes</button></header>
 <main id="log" aria-live="polite"></main>
 <div id="chips"></div>
@@ -218,7 +234,7 @@ const net=()=>{$('#st').classList.toggle('off',!navigator.onLine);$('#st span').
 addEventListener('online',net);addEventListener('offline',net);net();
 mem.historial.slice(-6).forEach(h=>add(h.role==='user'?'u':'b',h.content));
 say(mem.historial.length?'De vuelta, Eddy.':'Buenas, Eddy. Jhonny en línea.');
-if(!cfg.key)setTimeout(()=>{$('#hint').textContent='Para empezar, escribe tu clave de Groq. Se guarda solo en este teléfono.';$('#dlg').showModal()},300);
+if(!cfg.key)setTimeout(()=>{$('#hint').textContent='Para empezar, escribe tu clave de Groq. Se guarda solo en este teléfono.';$('#dlg').showModal()},2400);
 const DOTS='<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="3" r="2"/><circle cx="10" cy="10" r="2"/><circle cx="10" cy="17" r="2"/></svg>';
 $('#mn').innerHTML=DOTS;
 let scr=null,sel=-1,lpT;
