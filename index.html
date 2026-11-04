@@ -43,6 +43,11 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cy);outline-off
 .ct{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--ln);user-select:none;-webkit-user-select:none;touch-action:manipulation}
 .av{width:40px;height:40px;border-radius:50%;background:var(--ub);border:1px solid var(--bl);display:grid;place-items:center;color:var(--cy);font-weight:600}
 .ct .i{flex:1;min-width:0}.ct .i b{display:block;overflow-wrap:anywhere}.ct .i span{color:var(--dim);font-size:14px}
+#mic{border-radius:50%;padding:10px;line-height:0;color:var(--cy)}#mic.on{background:var(--bl);color:#fff}
+#lock{position:fixed;inset:0;z-index:90;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center}
+#lock[hidden]{display:none}#lock form{display:flex;flex-direction:column;align-items:center;gap:12px}
+#lock b{font-size:20px;letter-spacing:.35em;color:var(--cy)}
+#lock input{width:min(260px,80vw);text-align:center;font-size:24px;letter-spacing:.4em;background:var(--pn);color:var(--tx);border:1px solid var(--ln);border-radius:12px;padding:10px}
 .pl{font-size:22px;line-height:1;padding:6px 14px}
 .ck{width:22px;height:22px;accent-color:var(--cy);flex:none}
 .ct .i b{white-space:pre-wrap}
@@ -86,7 +91,7 @@ dialog input:not([type=checkbox]),dialog textarea{width:100%;background:var(--bg
 <header><div><div class="tt"><h1>JHONNY</h1><button id="mn" class="ic" aria-label="Menú" aria-haspopup="true"></button></div><div id="st"><i></i><span>En línea</span></div></div><button id="cfg">Ajustes</button></header>
 <main id="log" aria-live="polite"></main>
 <div id="chips"></div>
-<form id="f"><input id="q" autocomplete="off" placeholder="Escribe una orden" aria-label="Orden"><button id="go">Enviar</button></form>
+<form id="f"><input id="q" autocomplete="off" placeholder="Escribe una orden" aria-label="Orden"><button type="button" id="mic" aria-label="Hablar"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2z"/></svg></button><button id="go">Enviar</button></form>
 <input type="file" id="cam" accept="image/*" capture="environment" hidden>
 <input type="file" id="imp" accept=".json,application/json" hidden>
 <dialog id="dlg"><h2>Ajustes</h2>
@@ -98,7 +103,9 @@ dialog input:not([type=checkbox]),dialog textarea{width:100%;background:var(--bg
 <button id="nt">Activar avisos</button><button id="te">Probar aviso</button>
 <button id="ex">Exportar memoria</button><button id="im">Importar memoria</button>
 <button id="bn">Borrar notas</button><button id="bh">Borrar historial</button>
+<button id="pin">Poner o cambiar PIN</button><button id="pinq">Quitar PIN</button>
 <button id="cl" class="w">Cerrar</button></div><div id="ok"></div></dialog>
+<div id="lock" hidden><b>JHONNY</b><form id="lf"><input type="password" id="lk" inputmode="numeric" maxlength="8" autocomplete="off" aria-label="PIN" placeholder="PIN"><button>Entrar</button></form><div id="lke" style="color:var(--er);min-height:1.4em"></div><p style="color:var(--dim);font-size:13px">Si olvidas tu PIN, tendrás que borrar los datos del sitio en Chrome.</p></div>
 <div id="menu" hidden></div>
 <div id="pm" hidden><button id="pmd">Eliminar</button></div>
 <section class="scr" id="s-estudio" hidden>
@@ -113,6 +120,8 @@ dialog input:not([type=checkbox]),dialog textarea{width:100%;background:var(--bg
 <div class="row"><button id="cfn">Cancelar</button><button id="cfy" style="background:var(--er);border-color:var(--er);color:#000;font-weight:600">Eliminar</button></div></dialog>
 <dialog id="tx"><h2 id="txt"></h2><textarea id="txi" rows="3" aria-label="Texto"></textarea>
 <div class="row"><button id="txc">Cancelar</button><button id="txy" style="background:var(--bl);border-color:var(--bl);color:#fff">Guardar</button></div></dialog>
+<dialog id="pd"><h2 id="pdt"></h2><input type="password" id="pdi" inputmode="numeric" autocomplete="off" maxlength="8" aria-label="PIN">
+<div class="row"><button id="pdc">Cancelar</button><button id="pdy" style="background:var(--bl);border-color:var(--bl);color:#fff">Aceptar</button></div><div id="pde" style="color:var(--er);font-size:14px;min-height:1.4em;margin-top:8px"></div></dialog>
 <dialog id="ad"><h2>Nuevo contacto</h2><label for="an">Nombre</label><input type="text" id="an" autocomplete="off">
 <label for="at">Número</label><input type="tel" id="at" autocomplete="off" placeholder="Con código de país">
 <div class="row"><button id="acn">Cancelar</button><button id="acy" style="background:var(--bl);border-color:var(--bl);color:#fff">Guardar</button></div>
@@ -171,6 +180,20 @@ async function local(o){
    const wa=/whatsapp|wasap/.test(norm(izq));
    location.href=wa?'https://wa.me/'+x.num.replace(/\D/g,'')+'?text='+encodeURIComponent(txt):'sms:'+x.num+'?body='+encodeURIComponent(txt);
    return 'Abriendo '+(wa?'WhatsApp':'mensajes')+' para '+x.nombre+'. Toca enviar para confirmar.'}}
+ const ot=o.trim(),cola=g=>ot.slice(ot.length-g.length);
+ if(c=n.match(/^(?:anota|escribe|agrega|guarda|pon)\s+(?:en|a)\s+(?:mi\s+)?diario\s*:?\s*(.+)$/)){mem.diario.push({t:Date.now(),x:cola(c[1])});save();return 'Anotado en tu diario, Eddy.'}
+ if(/^(que dice mi diario|mi diario|lee mi diario)$/.test(n))return mem.diario.length?mem.diario.slice(-3).reverse().map(e=>fd(e.t)+': '+e.x).join('\n'):'Tu diario está vacío, Eddy.';
+ if(c=n.match(/^(?:nuevo habito|agrega habito|anade habito|crea habito)\s*:?\s+(.+)$/)){const nm=cola(c[1]);mem.habitos.push({n:nm,dias:[]});save();return 'Hábito creado: '+nm+'.'}
+ if(/^(mis habitos|habitos|como van mis habitos)$/.test(n))return mem.habitos.length?mem.habitos.map(h=>h.n+': racha de '+racha(h)+(h.dias.includes(dia(new Date()))?' (hecho hoy)':'')).join('\n'):'No tienes hábitos, Eddy. Crea uno con: nuevo hábito leer';
+ if(c=n.match(/^(?:cumpli|hice|complete|marca(?: el)? habito)\s+(?:con\s+)?(?:el\s+)?(.+)$/)){const h=mem.habitos.find(x=>norm(x.n).includes(c[1].trim())||c[1].includes(norm(x.n)));if(h){const hoy=dia(new Date());if(!h.dias.includes(hoy))h.dias.push(hoy);save();const r=racha(h);return 'Marcado: '+h.n+'. Racha: '+r+(r===1?' día.':' días.')}if(/^marca/.test(n))return 'No encontré ese hábito, Eddy.'}
+ if(c=n.match(/^(?:agrega|anade|pon|apunta|suma)\s+(.+?)\s+(?:a|en)\s+(?:la\s+|mi\s+|mis\s+)?(?:lista\s+de\s+)?(compras|tareas)$/)){const it=ot.substr(n.indexOf(c[1],n.indexOf(' ')+1),c[1].length);mem.listas[c[2]].push({t:it,ok:false});save();return 'Agregado a '+c[2]+': '+it+'.'}
+ if(c=n.match(/^(?:nueva tarea|agrega tarea|anade tarea|tarea)\s*:?\s+(.+)$/)){const it=cola(c[1]);mem.listas.tareas.push({t:it,ok:false});save();return 'Tarea agregada: '+it+'.'}
+ if(c=n.match(/^(?:mi lista de |lista de |que hay en mi lista de |mis |que )?(compras|tareas)(?: tengo| pendientes)?$/)){const L=mem.listas[c[1]];return L.length?(c[1]==='compras'?'Compras:\n':'Tareas:\n')+L.map((x,i)=>(i+1)+'. '+x.t+(x.ok?' (hecho)':'')).join('\n'):(c[1]==='compras'?'Tu lista de compras está vacía, Eddy.':'No tienes tareas pendientes, Eddy.')}
+ if(c=n.match(/^(?:convierte|convertir|pasa|cuanto es)\s+(-?\d+(?:\.\d+)?)\s*([a-z]+(?:\s+(?:celsius|fahrenheit))?)\s+(?:a|en)\s+([a-z]+(?:\s+(?:celsius|fahrenheit))?)$/)){const r=conv(+c[1],c[2],c[3]);if(r!=null)return c[1]+' '+c[2]+' = '+r+' '+c[3]}
+ if(c=n.match(/^cuant[oa]s?\s+([a-z]+)\s+(?:son|es|hay en)\s+(-?\d+(?:\.\d+)?)\s*([a-z]+)$/)){const r=conv(+c[2],c[3],c[1]);if(r!=null)return c[2]+' '+c[3]+' = '+r+' '+c[1]}
+ if(c=n.match(/^(?:cuanto es|calcula|cuanto da|resuelve)\s+(.+)$/)){const e=c[1].replace(/(\d+(?:\.\d+)?)\s*%\s*de\s*(\d+(?:\.\d+)?)/g,'($1/100*$2)').replace(/\bpor\b|\bx\b/g,'*').replace(/\bentre\b/g,'/').replace(/\bmas\b/g,'+').replace(/\bmenos\b/g,'-').replace(/\^/g,'**').replace(/,/g,'.');
+  if(/^[\d\s+\-*/().]+$/.test(e)&&/\d/.test(e)){try{const r=Function('"use strict";return('+e+')')();if(Number.isFinite(r))return c[1]+' = '+(+r.toFixed(6))}catch(x){}return 'No pude calcular eso, Eddy.'}}
+ if(c=n.match(/^(?:como esta el clima|que clima hace|el clima|clima)(?:\s+(?:en|de)\s+(.+))?$/))return await clima(c[1]&&cola(c[1]));
  const D=['recuerda que ','anota que ','no olvides que ','guarda que '].find(d=>n.startsWith(d));
  if(D){mem.datos.push({texto:o.slice(D.length).trim(),t:Date.now()});save();return 'Anotado, Eddy.'}
  if(/que recuerdas|mis notas/.test(n)&&w<=5)return mem.datos.length?'Recuerdo:\n'+mem.datos.map((d,i)=>(i+1)+'. '+d.texto+' ('+fd(d.t)+')').join('\n'):'Aún no tengo notas guardadas, Eddy.';
@@ -208,7 +231,7 @@ async function ia(texto,plano){
    for(;;){const{done,value}=await rd.read();if(done)break;buf+=dc.decode(value,{stream:true});const ls=buf.split('\n');buf=ls.pop();
     for(const l of ls){if(!l.startsWith('data: '))continue;const d=l.slice(6).trim();if(d==='[DONE]')continue;try{out+=JSON.parse(d).choices[0].delta.content||'';el.textContent=out;down()}catch(e){}}}
    el.classList.remove('live');out=out.trim()||'Sin respuesta, Eddy. Intenta de nuevo.';el.textContent=out;
-   mem.historial.push({role:'assistant',content:out,t:Date.now()});mem.historial=mem.historial.slice(-60);save();return out
+   mem.historial.push({role:'assistant',content:out,t:Date.now()});mem.historial=mem.historial.slice(-60);save();hablar(out);return out
   }catch(e){await sleep(1500)}
  }
  mem.historial.pop();fail(el,'No pude conectar con Groq. Revisa tu internet o intenta de nuevo.')}
@@ -217,7 +240,7 @@ async function enviar(t){if(busy||!t)return;busy=true;add('u',t);
  try{const tr=t.match(/^traduce(?:me)?\s+(?:al|a|en)\s+([^\s:]+)\s*:\s*([\s\S]+)$/i);
   if(tr){const out=await ia('Traduce al '+tr[1]+' el siguiente texto. Responde solo con la traducción, sin comentarios: '+tr[2],true);
    if(out){const b=document.createElement('button');b.className='cp';b.textContent='Copiar traducción';b.onclick=async()=>{try{await navigator.clipboard.writeText(out);b.textContent='Copiado'}catch(e){b.textContent='No pude copiar'}};log.append(b);down()}}
-  else{const r=await local(t);if(r!=null)say(r);else await ia(t)}}catch(e){say('Ocurrió un error, Eddy.')}
+  else{const r=await local(t);if(r!=null){say(r);hablar(r)}else await ia(t)}}catch(e){say('Ocurrió un error, Eddy.')}
  busy=false;save()}
 $('#f').onsubmit=e=>{e.preventDefault();const t=$('#q').value.trim();$('#q').value='';enviar(t)};
 [['Hora','qué hora es'],['Fecha','qué fecha es'],['Batería','batería'],['Notas','qué recuerdas'],['Recordatorios','qué recordatorios tengo'],['Estudio','modo estudio'],['Contactos','mis contactos'],['Cámara','abre cámara']].forEach(([a,c])=>{const b=document.createElement('button');b.textContent=a;b.type='button';b.onclick=()=>enviar(c);$('#chips').append(b)});
@@ -323,11 +346,48 @@ function pHab(){const b=$('#s-habitos .bd');b.innerHTML='';
 function nuevoHab(){pedirTexto('Nuevo hábito',n=>{mem.habitos.push({n,dias:[]});save();pHab()})}
 $('#hadd').onclick=nuevoHab;
 function opt(c,t,on,f){const e=document.createElement('button');e.textContent=t;e.setAttribute('aria-pressed',on);e.onclick=f;c.append(e)}
-function pApa(){const b=$('#s-apariencia .bd');b.innerHTML='<h3>Color</h3><div class="seg" id="ac"></div><h3>Personalidad</h3><div class="seg" id="ap" style="grid-template-columns:1fr"></div>';
+function pApa(){const b=$('#s-apariencia .bd');b.innerHTML='<h3>Color</h3><div class="seg" id="ac"></div><h3>Personalidad</h3><div class="seg" id="ap" style="grid-template-columns:1fr"></div><h3>Voz</h3><div class="seg" id="av"></div>';
  Object.keys(TEMAS).forEach(k=>opt($('#ac'),k[0].toUpperCase()+k.slice(1),(cfg.color||'cian')===k,()=>{cfg.color=k;save();tema();pApa()}));
- [['formal','Formal estilo JARVIS'],['profesor','Profesor'],['directo','Directo y breve']].forEach(([k,n])=>opt($('#ap'),n,(cfg.pers||'formal')===k,()=>{cfg.pers=k;save();pApa()}))}
+ [['formal','Formal estilo JARVIS'],['profesor','Profesor'],['directo','Directo y breve']].forEach(([k,n])=>opt($('#ap'),n,(cfg.pers||'formal')===k,()=>{cfg.pers=k;save();pApa()}));
+ opt($('#av'),'Solo si hablo',!cfg.voz,()=>{cfg.voz=false;save();pApa()});opt($('#av'),'Siempre en voz alta',!!cfg.voz,()=>{cfg.voz=true;save();pApa()})}
 const P={estudio:pEst,contactos:pCon,diario:pDia,listas:pLis,habitos:pHab,apariencia:pApa};
 tema();
+
+const UN={};(function(){const A=(t,f,...ks)=>ks.forEach(k=>UN[k]=[t,f]);
+ A('l',1,'metro','m');A('l',1000,'kilometro','km');A('l',.01,'centimetro','cm');A('l',.001,'milimetro','mm');A('l',1609.344,'milla','mi');A('l',.3048,'pie','ft');A('l',.0254,'pulgada','in');A('l',.9144,'yarda','yd');
+ A('m',1,'kilo','kilogramo','kg');A('m',.001,'gramo','g');A('m',.45359237,'libra','lb');A('m',.028349523,'onza','oz');
+ A('v',1,'litro','l');A('v',.001,'mililitro','ml');A('v',3.785411784,'galon');
+ A('t',0,'celsius','c');A('t',1,'fahrenheit','f');A('t',2,'kelvin','k')})();
+const un=t=>{t=t.replace(/^grados?\s+/,'').trim();return UN[t]||UN[t.replace(/e?s$/,'')]||UN[t.replace(/s$/,'')]};
+function conv(v,a,b){const A=un(a),B=un(b);if(!A||!B||A[0]!==B[0])return null;let r;
+ if(A[0]==='t'){const k=A[1]===0?v+273.15:A[1]===1?(v-32)*5/9+273.15:v;r=B[1]===0?k-273.15:B[1]===1?(k-273.15)*9/5+32:k}else r=v*A[1]/B[1];return +r.toFixed(4)}
+async function clima(ciudad){try{let la,lo,nom='tu ubicación';
+ if(ciudad){const g=await(await fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=es&name='+encodeURIComponent(ciudad))).json(),r=g.results&&g.results[0];if(!r)return 'No encontré esa ciudad, Eddy.';la=r.latitude;lo=r.longitude;nom=r.name}
+ else{const q=await new Promise((ok,no)=>navigator.geolocation.getCurrentPosition(ok,no,{timeout:10000}));la=q.coords.latitude;lo=q.coords.longitude}
+ const d=await(await fetch('https://api.open-meteo.com/v1/forecast?latitude='+la+'&longitude='+lo+'&current=temperature_2m,apparent_temperature,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=1')).json();
+ const k=d.current,y=d.daily,cd=k.weather_code,cond=cd===0?'despejado':cd<4?'parcialmente nublado':cd<50?'con niebla':cd<70?'con lluvia':cd<80?'con nieve':cd<90?'con chubascos':'con tormenta';
+ return 'En '+nom+': '+Math.round(k.temperature_2m)+' °C (sensación '+Math.round(k.apparent_temperature)+' °C), '+cond+'. Hoy: máxima '+Math.round(y.temperature_2m_max[0])+' °C, mínima '+Math.round(y.temperature_2m_min[0])+' °C, lluvia '+y.precipitation_probability_max[0]+'%.'}
+ catch(e){return 'No pude obtener el clima, Eddy. Revisa el permiso de ubicación o tu conexión.'}}
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec,porVoz=false;
+function hablar(t){const v=porVoz||cfg.voz;porVoz=false;if(!v||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='es-MX';speechSynthesis.speak(u)}
+$('#mic').onclick=()=>{if(!SR)return say('Este navegador no permite reconocimiento de voz, Eddy.');if(rec){rec.stop();return}
+ rec=new SR();rec.lang='es-MX';rec.interimResults=false;
+ rec.onstart=()=>$('#mic').classList.add('on');
+ rec.onresult=e=>{porVoz=true;enviar(e.results[0][0].transcript)};
+ rec.onerror=e=>say(e.error==='not-allowed'?'Activa el permiso del micrófono para Jhonny, Eddy.':'No te escuché bien, Eddy. Intenta de nuevo.');
+ rec.onend=()=>{$('#mic').classList.remove('on');rec=null};rec.start()};
+async function hash(p){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('jhonny:'+p));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+let pdFn,oculto=0;
+function pedirPin(t,f){$('#pdt').textContent=t;$('#pdi').value='';$('#pde').textContent='';pdFn=f;$('#pd').showModal()}
+$('#pdc').onclick=()=>$('#pd').close();
+$('#pdy').onclick=()=>{const v=$('#pdi').value;if(!/^\d{4,8}$/.test(v))return $('#pde').textContent='Usa de 4 a 8 números.';$('#pd').close();pdFn(v)};
+const ver=f=>cfg.pin?pedirPin('PIN actual',async p=>{(await hash(p))===cfg.pin?f():msg('PIN incorrecto.')}):f();
+$('#pin').onclick=()=>ver(()=>pedirPin('Nuevo PIN (4 a 8 números)',a=>pedirPin('Repite el PIN',async b=>{if(a!==b)return msg('Los PIN no coinciden.');cfg.pin=await hash(a);save();msg('PIN guardado.')})));
+$('#pinq').onclick=()=>{if(!cfg.pin)return msg('No tienes PIN.');ver(()=>{delete cfg.pin;save();msg('PIN quitado.')})};
+function bloquear(){$('#lock').hidden=false;$('#lk').value='';$('#lke').textContent='';setTimeout(()=>$('#lk').focus(),300)}
+$('#lf').onsubmit=async e=>{e.preventDefault();if((await hash($('#lk').value))===cfg.pin)$('#lock').hidden=true;else{$('#lke').textContent='PIN incorrecto.';$('#lk').value=''}};
+document.addEventListener('visibilitychange',()=>{if(document.hidden)oculto=Date.now();else if(cfg.pin&&oculto&&Date.now()-oculto>30000)bloquear()});
+if(cfg.pin)bloquear();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
 tick();
 </script></body></html>
