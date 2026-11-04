@@ -48,6 +48,15 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cy);outline-off
 #lock[hidden]{display:none}#lock form{display:flex;flex-direction:column;align-items:center;gap:12px}
 #lock b{font-size:20px;letter-spacing:.35em;color:var(--cy)}
 #lock input{width:min(260px,80vw);text-align:center;font-size:24px;letter-spacing:.4em;background:var(--pn);color:var(--tx);border:1px solid var(--ln);border-radius:12px;padding:10px}
+.cd{border:1px solid var(--ln);background:var(--pn);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.cd small{display:block;color:var(--dim);font-size:13px}.cd.tp{cursor:pointer}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}.g2 .cd{margin:0}
+.ring{display:block;margin:0 auto 4px}
+.hr{display:flex;justify-content:space-between;align-items:baseline}.hr small{display:inline}
+.hb{height:6px;border-radius:3px;background:var(--ln);margin:4px 0 8px;overflow:hidden}.hb i{display:block;height:100%;background:var(--cy)}
+.dl{display:grid;grid-template-columns:48px 1fr auto 44px;gap:8px;align-items:center;padding:10px 14px}
+.dl b{text-transform:capitalize}.dl em{color:var(--cy);font-style:normal;text-align:right}.dl span:nth-child(2){color:var(--dim)}
+input[type=range]{width:100%;accent-color:var(--cy)}
 .pl{font-size:22px;line-height:1;padding:6px 14px}
 .ck{width:22px;height:22px;accent-color:var(--cy);flex:none}
 .ct .i b{white-space:pre-wrap}
@@ -269,10 +278,10 @@ if(!cfg.key)setTimeout(()=>{$('#hint').textContent='Para empezar, escribe tu cla
 const DOTS='<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="3" r="2"/><circle cx="10" cy="10" r="2"/><circle cx="10" cy="17" r="2"/></svg>';
 $('#mn').innerHTML=DOTS;
 let scr=null,sel=-1,lpT;
-function abrir(id){cerrarMenu();$('#s-'+id).hidden=false;scr=id;history.pushState({s:id},'');P[id]()}
-addEventListener('popstate',()=>{if(scr){$('#s-'+scr).hidden=true;scr=null}});
+const pila=[];function abrir(id){cerrarMenu();if(scr){$('#s-'+scr).hidden=true;pila.push(scr)}$('#s-'+id).hidden=false;scr=id;history.pushState({s:id},'');P[id]()}
+addEventListener('popstate',()=>{if(scr){$('#s-'+scr).hidden=true;scr=pila.pop()||null;if(scr){$('#s-'+scr).hidden=false;P[scr]()}}});
 document.querySelectorAll('.bk').forEach(b=>b.onclick=()=>history.back());
-const MENU=[['Modo estudio','estudio'],['Contactos','contactos'],['Diario','diario'],['Listas','listas'],['Hábitos','habitos'],['Apariencia','apariencia']].map(([t,i])=>[t,()=>abrir(i)]);
+const MENU=[['Centro de mando','centro'],['Modo estudio','estudio'],['Contactos','contactos'],['Diario','diario'],['Listas','listas'],['Hábitos','habitos'],['Apariencia','apariencia']].map(([t,i])=>[t,()=>abrir(i)]);
 const mn=$('#menu');
 MENU.forEach(([t,f])=>{const b=document.createElement('button');b.textContent=t;b.onclick=f;mn.append(b)});
 const pr=document.createElement('button');pr.textContent='Próximamente';pr.disabled=true;mn.append(pr);
@@ -313,7 +322,7 @@ const PERS={profesor:'Tu personalidad es la de un profesor paciente y claro: exp
 const sis=()=>{let t=SIS;const q=PERS[cfg.pers];if(q)t=t.replace(/Tu personalidad es formal y seria[^.]*\./,q);return t+(cfg.estudio?ESTUDIO:'')};
 function mk(id,t,x){const e=document.createElement('section');e.className='scr';e.id='s-'+id;e.hidden=true;e.innerHTML='<div class="bar"><button class="bk">Atrás</button><h2>'+t+'</h2>'+(x||'')+'</div><div class="bd"></div>';document.body.append(e);e.querySelector('.bk').onclick=()=>history.back()}
 const mas=i=>'<button class="pl" id="'+i+'" aria-label="Agregar">+</button>';
-mk('diario','Diario',mas('dadd'));mk('listas','Listas',mas('ladd'));mk('habitos','Hábitos',mas('hadd'));mk('apariencia','Apariencia');
+mk('diario','Diario',mas('dadd'));mk('listas','Listas',mas('ladd'));mk('habitos','Hábitos',mas('hadd'));mk('apariencia','Apariencia');mk('centro','Centro de mando');mk('clima','Clima');
 let txFn,lt='compras';
 function pedirTexto(t,f){$('#txt').textContent=t;$('#txi').value='';txFn=f;$('#tx').showModal()}
 $('#txc').onclick=()=>$('#tx').close();
@@ -346,11 +355,14 @@ function pHab(){const b=$('#s-habitos .bd');b.innerHTML='';
 function nuevoHab(){pedirTexto('Nuevo hábito',n=>{mem.habitos.push({n,dias:[]});save();pHab()})}
 $('#hadd').onclick=nuevoHab;
 function opt(c,t,on,f){const e=document.createElement('button');e.textContent=t;e.setAttribute('aria-pressed',on);e.onclick=f;c.append(e)}
-function pApa(){const b=$('#s-apariencia .bd');b.innerHTML='<h3>Color</h3><div class="seg" id="ac"></div><h3>Personalidad</h3><div class="seg" id="ap" style="grid-template-columns:1fr"></div><h3>Voz</h3><div class="seg" id="av"></div>';
+function pApa(){const b=$('#s-apariencia .bd');b.innerHTML='<h3>Color</h3><div class="seg" id="ac"></div><h3>Personalidad</h3><div class="seg" id="ap" style="grid-template-columns:1fr"></div><h3>Voz</h3><div class="seg" id="av"></div><h3>Voz del asistente</h3><div class="seg" id="vs" style="grid-template-columns:1fr"></div><div id="sl"></div>';
  Object.keys(TEMAS).forEach(k=>opt($('#ac'),k[0].toUpperCase()+k.slice(1),(cfg.color||'cian')===k,()=>{cfg.color=k;save();tema();pApa()}));
  [['formal','Formal estilo JARVIS'],['profesor','Profesor'],['directo','Directo y breve']].forEach(([k,n])=>opt($('#ap'),n,(cfg.pers||'formal')===k,()=>{cfg.pers=k;save();pApa()}));
- opt($('#av'),'Solo si hablo',!cfg.voz,()=>{cfg.voz=false;save();pApa()});opt($('#av'),'Siempre en voz alta',!!cfg.voz,()=>{cfg.voz=true;save();pApa()})}
-const P={estudio:pEst,contactos:pCon,diario:pDia,listas:pLis,habitos:pHab,apariencia:pApa};
+ opt($('#av'),'Solo si hablo',!cfg.voz,()=>{cfg.voz=false;save();pApa()});opt($('#av'),'Siempre en voz alta',!!cfg.voz,()=>{cfg.voz=true;save();pApa()});
+ opt($('#vs'),'Automática',!cfg.vozN,()=>{cfg.vozN='';save();decir('Buenas, Eddy.');pApa()});
+ vz().forEach(v=>opt($('#vs'),v.name+' ('+v.lang+')',cfg.vozN===v.name,()=>{cfg.vozN=v.name;save();decir('Buenas, Eddy.');pApa()}));
+ const c=$('#sl');slider(c,'Velocidad de la voz',0.5,1.5,0.1,'vel',1,x=>x.toFixed(1)+'x');slider(c,'Tono de la voz (a la izquierda, más grave)',0.4,1.4,0.05,'tono',0.75,x=>x.toFixed(2));slider(c,'Tamaño de letra',14,22,1,'letra',16,x=>x+' px')}
+const P={centro:pCen,clima:pCli,estudio:pEst,contactos:pCon,diario:pDia,listas:pLis,habitos:pHab,apariencia:pApa};
 tema();
 
 const UN={};(function(){const A=(t,f,...ks)=>ks.forEach(k=>UN[k]=[t,f]);
@@ -369,7 +381,9 @@ async function clima(ciudad){try{let la,lo,nom='tu ubicación';
  return 'En '+nom+': '+Math.round(k.temperature_2m)+' °C (sensación '+Math.round(k.apparent_temperature)+' °C), '+cond+'. Hoy: máxima '+Math.round(y.temperature_2m_max[0])+' °C, mínima '+Math.round(y.temperature_2m_min[0])+' °C, lluvia '+y.precipitation_probability_max[0]+'%.'}
  catch(e){return 'No pude obtener el clima, Eddy. Revisa el permiso de ubicación o tu conexión.'}}
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec,porVoz=false;
-function hablar(t){const v=porVoz||cfg.voz;porVoz=false;if(!v||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='es-MX';speechSynthesis.speak(u)}
+const vz=()=>window.speechSynthesis?speechSynthesis.getVoices().filter(v=>/^es/i.test(v.lang)):[];
+function decir(t){if(!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='es-MX';u.rate=cfg.vel||1;u.pitch=cfg.tono||0.75;const v=vz().find(x=>x.name===cfg.vozN);if(v){u.voice=v;u.lang=v.lang}speechSynthesis.speak(u)}
+function hablar(t){const v=porVoz||cfg.voz;porVoz=false;if(v)decir(t)}
 $('#mic').onclick=()=>{if(!SR)return say('Este navegador no permite reconocimiento de voz, Eddy.');if(rec){rec.stop();return}
  rec=new SR();rec.lang='es-MX';rec.interimResults=false;
  rec.onstart=()=>$('#mic').classList.add('on');
@@ -388,6 +402,37 @@ function bloquear(){$('#lock').hidden=false;$('#lk').value='';$('#lke').textCont
 $('#lf').onsubmit=async e=>{e.preventDefault();if((await hash($('#lk').value))===cfg.pin)$('#lock').hidden=true;else{$('#lke').textContent='PIN incorrecto.';$('#lk').value=''}};
 document.addEventListener('visibilitychange',()=>{if(document.hidden)oculto=Date.now();else if(cfg.pin&&oculto&&Date.now()-oculto>30000)bloquear()});
 if(cfg.pin)bloquear();
+
+const ap=()=>{document.body.style.fontSize=(cfg.letra||16)+'px'};ap();
+function slider(c,t,mn,mx,st,k,df,fm){const d=document.createElement('div');d.style.marginTop='14px';const v=cfg[k]??df;
+ d.innerHTML='<div style="color:var(--dim);font-size:14px"></div><input type="range" min="'+mn+'" max="'+mx+'" step="'+st+'" value="'+v+'" aria-label="'+t+'">';
+ const e=d.firstChild,r=d.lastChild,u=x=>e.textContent=t+': '+fm(x);u(v);
+ r.oninput=()=>{cfg[k]=+r.value;save();u(+r.value);if(k==='letra')ap()};r.onchange=()=>{if(k==='vel'||k==='tono')decir('Buenas, Eddy.')};c.append(d)}
+if(window.speechSynthesis)speechSynthesis.onvoiceschanged=()=>{if(scr==='apariencia')pApa()};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cond=c=>c===0?'despejado':c<4?'nubes':c<50?'niebla':c<70?'lluvia':c<80?'nieve':c<90?'chubascos':'tormenta';
+let clC=null,ubic=null;
+async function datosClima(){if(clC&&Date.now()-clC.t<6e5)return clC.d;
+ ubic=ubic||await new Promise((ok,no)=>navigator.geolocation.getCurrentPosition(q=>ok({la:q.coords.latitude,lo:q.coords.longitude}),no,{timeout:10000}));
+ const d=await(await fetch('https://api.open-meteo.com/v1/forecast?latitude='+ubic.la+'&longitude='+ubic.lo+'&current=temperature_2m,apparent_temperature,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=7')).json();
+ clC={t:Date.now(),d};return d}
+function pCen(){const b=$('#s-centro .bd'),n=new Date(),T=mem.listas.tareas.filter(x=>!x.ok).slice(0,2),R=[...mem.recs].sort((a,c)=>a.due-c.due)[0],H=mem.habitos.slice(0,2);
+ b.innerHTML='<div class="cd"><b style="font-size:24px;color:var(--cy)">'+n.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit',hour12:false})+'</b><small>'+n.toLocaleDateString('es',{weekday:'long',day:'numeric',month:'long'})+'</small></div>'
+ +'<div class="g2"><div class="cd"><svg class="ring" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" style="stroke:var(--ln)" stroke-width="6"/><circle id="bar" cx="32" cy="32" r="26" fill="none" style="stroke:var(--cy)" stroke-width="6" stroke-linecap="round" stroke-dasharray="0 163.4" transform="rotate(-90 32 32)"/><text id="bt" x="32" y="37" text-anchor="middle" font-size="14" style="fill:var(--tx)">--</text></svg><small style="text-align:center">Batería</small></div>'
+ +'<div class="cd tp" id="ccl"><small>Clima ›</small><b style="font-size:22px" id="ct1">--</b><small id="ct2">Cargando…</small></div></div>'
+ +'<div class="cd"><small>Recordatorios</small>'+(R?esc(dur(Math.max(1,Math.round((R.due-Date.now())/1000)))+': '+(R.texto||'Temporizador')):'Ninguno pendiente')+'</div>'
+ +'<div class="cd tp" id="ctr"><small>Tareas pendientes ›</small>'+(T.length?T.map((x,i)=>'<div>'+(i+1)+'. '+esc(x.t)+'</div>').join(''):'Sin tareas pendientes')+'</div>'
+ +'<div class="cd tp" id="chb"><small>Hábitos ›</small>'+(H.length?H.map(h=>{const r=racha(h);return '<div class="hr"><span>'+esc(h.n)+'</span><small>racha de '+r+(r===1?' día':' días')+'</small></div><div class="hb"><i style="width:'+Math.min(r,7)/7*100+'%"></i></div>'}).join(''):'Sin hábitos aún')+'</div>';
+ $('#ccl').onclick=()=>abrir('clima');$('#ctr').onclick=()=>{lt='tareas';abrir('listas')};$('#chb').onclick=()=>abrir('habitos');
+ navigator.getBattery&&navigator.getBattery().then(x=>{const q=Math.round(x.level*100);$('#bar').setAttribute('stroke-dasharray',163.4*q/100+' 163.4');$('#bt').textContent=q+'%'}).catch(()=>{});
+ datosClima().then(d=>{$('#ct1').textContent=Math.round(d.current.temperature_2m)+' °C';$('#ct2').textContent=cond(d.current.weather_code)}).catch(()=>{$('#ct2').textContent='Sin datos'})}
+async function pCli(){const b=$('#s-clima .bd');b.innerHTML='<div class="vac"><p>Cargando…</p></div>';
+ try{const d=await datosClima(),k=d.current,y=d.daily;
+  b.innerHTML='<div style="text-align:center;margin-bottom:12px"><small style="color:var(--dim)">Tu ubicación</small><div style="font-size:26px;color:var(--cy)">'+Math.round(k.temperature_2m)+' °C · '+cond(k.weather_code)+'</div><small style="color:var(--dim)">Sensación '+Math.round(k.apparent_temperature)+' °C</small></div><div id="dl"></div>';
+  y.time.forEach((f,i)=>{const r=document.createElement('div');r.className='cd dl';if(!i)r.style.borderColor='var(--cy)';
+   r.innerHTML='<b>'+(i?new Date(f+'T12:00').toLocaleDateString('es',{weekday:'short'}):'Hoy')+'</b><span>'+cond(y.weather_code[i])+'</span><span>'+Math.round(y.temperature_2m_max[i])+'° / '+Math.round(y.temperature_2m_min[i])+'°</span><em>'+(y.precipitation_probability_max[i]??0)+'%</em>';$('#dl').append(r)})}
+ catch(e){b.innerHTML='<div class="vac"><p>No pude obtener el clima. Revisa el permiso de ubicación y tu conexión.</p></div>'}}
+setInterval(()=>{if(scr==='centro')pCen()},60000);
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
 tick();
 </script></body></html>
