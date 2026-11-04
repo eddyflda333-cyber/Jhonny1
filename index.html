@@ -18,7 +18,7 @@ h1{font-size:20px;font-weight:600;letter-spacing:.35em;color:var(--cy)}
 button{font:inherit;color:var(--tx);background:none;border:1px solid var(--ln);border-radius:8px;padding:8px 12px;cursor:pointer}
 button:active{background:var(--ln)}
 button:focus-visible,input:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
-#log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+#log{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:16px;display:flex;flex-direction:column;gap:12px}
 .m{max-width:88%;white-space:pre-wrap;overflow-wrap:anywhere;-webkit-user-select:none;user-select:none}
 .u{align-self:flex-end;background:var(--ub);border:1px solid var(--bl);border-radius:14px 14px 2px 14px;padding:8px 12px}
 .b{align-self:flex-start;border-left:2px solid var(--cy);padding:2px 0 2px 12px}
@@ -57,6 +57,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cy);outline-off
 .dl{display:grid;grid-template-columns:48px 1fr auto 44px;gap:8px;align-items:center;padding:10px 14px}
 .dl b{text-transform:capitalize}.dl em{color:var(--cy);font-style:normal;text-align:right}.dl span:nth-child(2){color:var(--dim)}
 input[type=range]{width:100%;accent-color:var(--cy)}
+.m::after{content:attr(data-h);display:block;font-size:11px;color:var(--dim);margin-top:2px}
+#fin{position:fixed;right:16px;bottom:140px;z-index:5;width:40px;height:40px;border-radius:50%;padding:0;background:var(--pn)}
 .pl{font-size:22px;line-height:1;padding:6px 14px}
 .ck{width:22px;height:22px;accent-color:var(--cy);flex:none}
 .ct .i b{white-space:pre-wrap}
@@ -100,7 +102,7 @@ dialog input:not([type=checkbox]),dialog textarea{width:100%;background:var(--bg
 <header><div><div class="tt"><h1>JHONNY</h1><button id="mn" class="ic" aria-label="Menú" aria-haspopup="true"></button></div><div id="st"><i></i><span>En línea</span></div></div><button id="cfg">Ajustes</button></header>
 <main id="log" aria-live="polite"></main>
 <div id="chips"></div>
-<form id="f"><input id="q" autocomplete="off" placeholder="Escribe una orden" aria-label="Orden"><button type="button" id="mic" aria-label="Hablar"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2z"/></svg></button><button id="go">Enviar</button></form>
+<form id="f"><input id="q" autocomplete="off" maxlength="2000" enterkeyhint="send" placeholder="Escribe una orden" aria-label="Orden"><button type="button" id="mic" aria-label="Hablar"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2z"/></svg></button><button id="go">Enviar</button></form>
 <input type="file" id="cam" accept="image/*" capture="environment" hidden>
 <input type="file" id="imp" accept=".json,application/json" hidden>
 <dialog id="dlg"><h2>Ajustes</h2>
@@ -112,11 +114,13 @@ dialog input:not([type=checkbox]),dialog textarea{width:100%;background:var(--bg
 <button id="nt">Activar avisos</button><button id="te">Probar aviso</button>
 <button id="ex">Exportar memoria</button><button id="im">Importar memoria</button>
 <button id="bn">Borrar notas</button><button id="bh">Borrar historial</button>
+<button id="kv">Mostrar clave</button><button id="kt">Probar clave</button><button id="bl" class="w">Bloquear ahora</button>
 <button id="pin">Poner o cambiar PIN</button><button id="pinq">Quitar PIN</button>
-<button id="cl" class="w">Cerrar</button></div><div id="ok"></div></dialog>
+<button id="cl" class="w">Cerrar</button></div><div id="ok" role="status"></div></dialog>
 <div id="lock" hidden><b>JHONNY</b><form id="lf"><input type="password" id="lk" inputmode="numeric" maxlength="8" autocomplete="off" aria-label="PIN" placeholder="PIN"><button>Entrar</button></form><div id="lke" style="color:var(--er);min-height:1.4em"></div><p style="color:var(--dim);font-size:13px">Si olvidas tu PIN, tendrás que borrar los datos del sitio en Chrome.</p></div>
+<button id="fin" hidden aria-label="Ir al final">↓</button>
 <div id="menu" hidden></div>
-<div id="pm" hidden><button id="pmd">Eliminar</button></div>
+<div id="pm" hidden><button id="pml">Llamar</button><button id="pmw">WhatsApp</button><button id="pmd">Eliminar</button></div>
 <section class="scr" id="s-estudio" hidden>
 <div class="bar"><button class="bk">Atrás</button><h2>Modo estudio</h2></div>
 <div class="bd"><div class="card"><div style="color:var(--dim);font-size:14px">Modo activo</div><div id="ea" style="font-size:22px;color:var(--cy);font-weight:600"></div></div>
@@ -140,28 +144,29 @@ dialog input:not([type=checkbox]),dialog textarea{width:100%;background:var(--bg
 const $=s=>document.querySelector(s),S=localStorage,URL_='https://api.groq.com/openai/v1/chat/completions';
 const ld=(k,d)=>{try{return JSON.parse(S[k])||d}catch(e){return d}};
 let cfg=ld('cfg',{key:'',model:'openai/gpt-oss-120b'}),mem=ld('mem',{datos:[],historial:[],recs:[]}),busy=false;
-mem.contactos=mem.contactos||[];mem.cola=mem.cola||[];mem.gastos=mem.gastos||[];mem.fechas=mem.fechas||[];mem.diario=mem.diario||[];mem.listas=Object.assign({compras:[],tareas:[]},mem.listas||{});mem.habitos=mem.habitos||[];
-const save=()=>{S.cfg=JSON.stringify(cfg);S.mem=JSON.stringify(mem)};
-const SIS='Eres Jhonny, el asistente personal de Eddy, inspirado en JARVIS de Iron Man. Tu personalidad es formal y seria, sin bromas ni humor forzado, pero no excesivamente ceremoniosa: a veces puedes ser cercano. El nombre de tu usuario es Eddy, úsalo de vez en cuando. Responde siempre en español correcto y claro, sin groserías ni informalidad aunque Eddy las use. Reglas importantes: 1. No des consejos médicos, legales o financieros serios; recomienda hablar con un adulto o profesional. 2. En tareas escolares, no des solo la respuesta final: explica el procedimiento para que Eddy aprenda. 3. No opines sobre temas personales o conflictos de Eddy a menos que él te lo pida explícitamente. 4. No finjas ser una persona real ni tener sentimientos o cuerpo; eres una IA que ayuda a Eddy. Si no sabes algo o no tienes esa información (clima en tiempo real, noticias actuales, datos recientes), dilo claramente en vez de inventar una respuesta. No tienes acceso a internet en vivo ni puedes ver la pantalla del celular, solo lo que te escriben. IMPORTANTE: la pantalla es de texto plano, sin soporte para formato. No uses nunca asteriscos (** o *), numerales (#), guiones de lista (-), ni notación LaTeX como \\( \\) o \\[ \\]. Para matemáticas, usa símbolos normales: *, /, +, -, ^, paréntesis. Para listas, usa números seguidos de punto. No uses emojis ni emoticonos bajo ninguna circunstancia. Sé muy breve: responde en 1 a 3 frases como máximo, salvo que Eddy pida explícitamente más detalle o una explicación larga. Nunca des contexto, advertencias ni explicaciones que no se pidieron.';
+function sane(){['datos','historial','recs','contactos','diario','habitos','gastos','fechas','cola'].forEach(k=>{if(!Array.isArray(mem[k]))mem[k]=[]});mem.recs=mem.recs.filter(r=>r&&Number.isFinite(r.due));if(!mem.listas||typeof mem.listas!=='object')mem.listas={};['compras','tareas'].forEach(k=>{if(!Array.isArray(mem.listas[k]))mem.listas[k]=[]})}
+sane();
+let svW=0;const save=()=>{try{S.cfg=JSON.stringify(cfg);S.mem=JSON.stringify(mem)}catch(e){if(!svW){svW=1;alert('Jhonny no pudo guardar: el teléfono se quedó sin espacio. Exporta tu memoria y borra datos viejos.')}}};
+const SIS='Eres Jhonny, el asistente personal de Eddy, inspirado en JARVIS de Iron Man. Tu personalidad es formal y seria, sin bromas ni humor forzado, pero no excesivamente ceremoniosa: a veces puedes ser cercano. El nombre de tu usuario es Eddy, úsalo de vez en cuando. Responde siempre en español correcto y claro, sin groserías ni informalidad aunque Eddy las use. Reglas importantes: 1. No des consejos médicos, legales o financieros serios; recomienda hablar con un adulto o profesional. 2. En tareas escolares, no des solo la respuesta final: explica el procedimiento para que Eddy aprenda. 3. No opines sobre temas personales o conflictos de Eddy a menos que él te lo pida explícitamente. 4. No finjas ser una persona real ni tener sentimientos o cuerpo; eres una IA que ayuda a Eddy. Si no sabes algo o no tienes esa información (noticias actuales, datos recientes), dilo claramente en vez de inventar una respuesta. No puedes buscar en internet ni ver la pantalla del celular; solo conoces lo que te escriben y los datos que la app te entrega. IMPORTANTE: la pantalla es de texto plano, sin soporte para formato. No uses nunca asteriscos (** o *), numerales (#), guiones de lista (-), ni notación LaTeX como \\( \\) o \\[ \\]. Para matemáticas, usa símbolos normales: *, /, +, -, ^, paréntesis. Para listas, usa números seguidos de punto. No uses emojis ni emoticonos bajo ninguna circunstancia. Sé muy breve: responde en 1 a 3 frases como máximo, salvo que Eddy pida explícitamente más detalle o una explicación larga. Nunca des contexto, advertencias ni explicaciones que no se pidieron.';
 const ESTUDIO=' MODO ESTUDIO ACTIVO: Eddy está estudiando. Ignora el límite de 3 frases: puedes extenderte hasta 8 frases. Explica paso a paso con claridad y un ejemplo sencillo, sin dar solo la respuesta final. Termina con una pregunta de práctica corta para que Eddy responda. Cuando Eddy responda a tu pregunta, dile si es correcto y explica el error si lo hay.';
 const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const fd=t=>new Date(t).toLocaleString('es',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
-const log=$('#log'),down=()=>log.scrollTop=log.scrollHeight;
-function add(c,t){const e=document.createElement('div');e.className='m '+c;e.textContent=t;log.append(e);down();return e}
+const log=$('#log'),down=f=>{if(f||log.scrollHeight-log.scrollTop-log.clientHeight<120)log.scrollTop=log.scrollHeight};
+function add(c,t){const e=document.createElement('div');e.className='m '+c;e.dataset.h=new Date().toLocaleTimeString('es',{hour:'numeric',minute:'2-digit',hour12:true});e.textContent=t;log.append(e);down(c==='u');return e}
 const say=t=>add('b',t);
 function msg(t){$('#ok').textContent=t}
 
 async function notify(t){try{if(Notification.permission==='granted'){const r=await navigator.serviceWorker.ready;await r.showNotification('Jhonny',{body:t,icon:'icon-192.png',vibrate:[200,100,200]});return true}}catch(e){}return false}
-function beep(){try{const a=new AudioContext(),o=a.createOscillator();o.frequency.value=880;o.connect(a.destination);o.start();o.stop(a.currentTime+.4)}catch(e){}}
+let AC;function beep(){try{AC=AC||new AudioContext();const o=AC.createOscillator();o.frequency.value=880;o.connect(AC.destination);o.start();o.stop(AC.currentTime+.4)}catch(e){}}
 function tick(){const n=Date.now(),v=mem.recs.filter(r=>r.due<=n);if(!v.length)return;mem.recs=mem.recs.filter(r=>r.due>n);v.forEach(r=>{if(r.rep){let d=r.due;while(d<=n)d+=r.rep==='d'?864e5:6048e5;mem.recs.push({...r,due:d})}});save();
  v.forEach(r=>{const t=r.texto||'Temporizador finalizado';say('Recordatorio: '+t);notify(t);navigator.vibrate&&navigator.vibrate([300,150,300]);beep()})}
 setInterval(tick,1000);document.addEventListener('visibilitychange',tick);
 
-const APPS={whatsapp:'com.whatsapp',facebook:'com.facebook.lite','facebook lite':'com.facebook.lite',instagram:'com.instagram.android','lark player':'com.dywx.larkplayer',lark:'com.dywx.larkplayer'};
+const APPS={youtube:'com.google.android.youtube',spotify:'com.spotify.music',telegram:'org.telegram.messenger',tiktok:'com.zhiliaoapp.musically',maps:'com.google.android.apps.maps',mapas:'com.google.android.apps.maps',chrome:'com.android.chrome',gmail:'com.google.android.gm',whatsapp:'com.whatsapp',facebook:'com.facebook.lite','facebook lite':'com.facebook.lite',instagram:'com.instagram.android','lark player':'com.dywx.larkplayer',lark:'com.dywx.larkplayer'};
 const dur=s=>s>=3600?Math.round(s/360)/10+' h':s>=60?Math.ceil(s/60)+' min':s+' s';
 
-async function local(o){
+async function local(o){o=o.replace(/^[¿¡\s]+|[?!\s]+$/g,'');
  const n=norm(o).trim(),w=n.split(/\s+/).length;let m;
  if(/^(recuerdame|avisame|recordatorio)/.test(n)){let due=null,mm;const rep=/todos los dias|cada dia|diario/.test(n)?'d':/todas las semanas|cada semana|semanal/.test(n)?'w':null,nn=n.replace(/de la manana/g,'');
   if(/media hora/.test(n))due=Date.now()+18e5;
@@ -213,6 +218,7 @@ async function local(o){
  if(c=n.match(/^(?:cuanto es|calcula|cuanto da|resuelve)\s+(.+)$/)){const e=c[1].replace(/(\d+(?:\.\d+)?)\s*%\s*de\s*(\d+(?:\.\d+)?)/g,'($1/100*$2)').replace(/\bpor\b|\bx\b/g,'*').replace(/\bentre\b/g,'/').replace(/\bmas\b/g,'+').replace(/\bmenos\b/g,'-').replace(/\^/g,'**').replace(/,/g,'.');
   if(/^[\d\s+\-*/().]+$/.test(e)&&/\d/.test(e)){try{const r=Function('"use strict";return('+e+')')();if(Number.isFinite(r))return c[1]+' = '+(+r.toFixed(6))}catch(x){}return 'No pude calcular eso, Eddy.'}}
  if(c=n.match(/^(?:como esta el clima|que clima hace|el clima|clima)(?:\s+(?:en|de)\s+(.+))?$/))return await clima(c[1]&&cola(c[1]));
+ if(/^(callate|callar|silencio|detente)$/.test(n)){window.speechSynthesis&&speechSynthesis.cancel();return 'Silencio, Eddy.'}
  if(/^(buenos dias|buen dia|resumen del dia|mi dia|resumen)$/.test(n))return await resumen();
  if(/^(pomodoro|cronometro)$/.test(n)){abrir('tiempo');return 'Abriendo el cronómetro, Eddy.'}
  if(c=n.match(/^busca(?:r)?\s+(.+?)\s+en\s+(?:el\s+)?historial$/)||n.match(/^busca(?:r)?\s+en\s+(?:el\s+)?historial\s*:?\s*(.+)$/)){const H=mem.historial.filter(h=>norm(h.content).includes(c[1])).slice(-5);return H.length?H.map(h=>fd(h.t)+' '+(h.role==='user'?'Tú':'Jhonny')+': '+h.content.slice(0,80)).join('\n'):'No encontré nada, Eddy.'}
@@ -223,7 +229,7 @@ async function local(o){
  if(D){mem.datos.push({texto:o.slice(D.length).trim(),t:Date.now()});save();return 'Anotado, Eddy.'}
  if(/que recuerdas|mis notas/.test(n)&&w<=5)return mem.datos.length?'Recuerdo:\n'+mem.datos.map((d,i)=>(i+1)+'. '+d.texto+' ('+fd(d.t)+')').join('\n'):'Aún no tengo notas guardadas, Eddy.';
  if(n.startsWith('olvida la nota ')){const k=parseInt(n.split(/\s+/).pop());if(!k)return 'Dime el número de la nota, Eddy.';if(k<1||k>mem.datos.length)return 'Esa nota no existe, Eddy.';mem.datos.splice(k-1,1);save();return 'Nota '+k+' eliminada, Eddy.'}
- if(n==='olvida todo'||n==='borra tu memoria'){mem.datos=[];mem.historial=[];save();return 'He borrado todas mis notas y mi historial, Eddy.'}
+ if(n==='olvida todo'||n==='borra tu memoria'){confirmar('¿Seguro que quieres borrar todas tus notas y tu historial?',()=>{mem.datos=[];mem.historial=[];save();log.innerHTML='';say('Listo, Eddy. Borré mis notas y mi historial.')});return 'Esperando tu confirmación.'}
  if(/\bborra/.test(n)&&/conversa|historial|mensaje|chat/.test(n)){
   const a=new Date(),L=/hora/.test(n)?a-36e5:/hoy/.test(n)?new Date(a.getFullYear(),a.getMonth(),a.getDate()).getTime():/semana/.test(n)?a-6048e5:/\bmes\b/.test(n)?a-2592e6:0;
   if(!L)return 'Dime el período: hoy, esta semana, el mes o la última hora.';
@@ -237,19 +243,19 @@ async function local(o){
  if(/bateria/.test(n)){try{const b=await navigator.getBattery();return 'Batería al '+Math.round(b.level*100)+' por ciento, '+(b.charging?'cargando':'sin cargar')+'.'}catch(e){return 'No pude leer la batería, Eddy.'}}
  if(/\bvibra/.test(n))return navigator.vibrate&&navigator.vibrate(500)?'Listo, Eddy.':'Este dispositivo no permite vibrar desde el navegador.';
  if(/^abre (la )?camara/.test(n)){$('#cam').click();return 'Abriendo la cámara.'}
- if(n.startsWith('abre ')){const a=n.slice(5).trim(),p=APPS[a];if(!p)return 'No tengo registrada esa aplicación, Eddy.';location.href='intent://#Intent;package='+p+';end';return 'Abriendo '+a+'.'}
+ if(n.startsWith('abre ')){const a=n.slice(5).trim(),p=APPS[a];if(!p)return w<=3?'No tengo registrada esa aplicación, Eddy.':null;location.href='intent://#Intent;package='+p+';end';return 'Abriendo '+a+'.'}
  return null}
 
-function fail(e,t){e.classList.remove('live');e.classList.add('er');e.textContent=t}
+function fail(e,t){e.setAttribute('role','alert');e.classList.remove('live');e.classList.add('er');e.textContent=t}
 async function ia(texto,plano){
  if(!cfg.key){say('Falta la clave de Groq. Escríbela en Ajustes.');$('#dlg').showModal();return}
  if(!navigator.onLine){mem.cola.push(texto);save();say('Sin conexión, Eddy. Guardé tu mensaje y lo enviaré cuando vuelva la señal.');return}
  mem.historial.push({role:'user',content:texto,t:Date.now()});
- const ms=[{role:'system',content:plano?SIS:sis()},...mem.historial.slice(-20).map(({role,content})=>({role,content}))];
+ const H=mem.historial.slice(-20).map(({role,content})=>({role,content}));while(H.length>1&&H.reduce((a,m)=>a+m.content.length,0)>12000)H.shift();const ms=[{role:'system',content:plano?SIS:sis()},...H];
  const el=add('b live','');
  for(let i=0;i<3;i++){
   try{
-   const r=await fetch(URL_,{method:'POST',headers:{Authorization:'Bearer '+cfg.key,'Content-Type':'application/json'},body:JSON.stringify({model:cfg.model,messages:ms,stream:true})});
+   const r=await fetch(URL_,{method:'POST',headers:{Authorization:'Bearer '+cfg.key,'Content-Type':'application/json'},body:JSON.stringify({model:cfg.model,messages:ms,stream:true}),signal:AbortSignal.timeout(9e4)});
    if(r.status===503){await sleep(3000);continue}
    const bad=r.status===401?'La clave de Groq no es válida. Corrígela en Ajustes.':r.status===429?'Se alcanzó el límite de uso de Groq. Espera un momento e intenta de nuevo.':!r.ok?'Groq respondió con el error '+r.status+'.':'';
    if(bad){mem.historial.pop();fail(el,bad);return}
@@ -267,38 +273,38 @@ async function enviar(t){if(busy||!t)return;busy=true;add('u',t);
   if(tr){const out=await ia('Traduce al '+tr[1]+' el siguiente texto. Responde solo con la traducción, sin comentarios: '+tr[2],true);
    if(out){const b=document.createElement('button');b.className='cp';b.textContent='Copiar traducción';b.onclick=async()=>{try{await navigator.clipboard.writeText(out);b.textContent='Copiado'}catch(e){b.textContent='No pude copiar'}};log.append(b);down()}}
   else{const r=await local(t);if(r!=null){say(r);hablar(r)}else await ia(t)}}catch(e){say('Ocurrió un error, Eddy.')}
- busy=false;save()}
+ busy=false;porVoz=false;save()}
 $('#f').onsubmit=e=>{e.preventDefault();const t=$('#q').value.trim();$('#q').value='';enviar(t)};
-[['Hora','qué hora es'],['Fecha','qué fecha es'],['Batería','batería'],['Notas','qué recuerdas'],['Recordatorios','qué recordatorios tengo'],['Estudio','modo estudio'],['Contactos','mis contactos'],['Cámara','abre cámara']].forEach(([a,c])=>{const b=document.createElement('button');b.textContent=a;b.type='button';b.onclick=()=>enviar(c);$('#chips').append(b)});
+[['Hora','qué hora es'],['Fecha','qué fecha es'],['Batería','batería'],['Notas','qué recuerdas'],['Recordatorios','qué recordatorios tengo'],['Estudio','modo estudio'],['Contactos','mis contactos'],['Silencio','silencio'],['Cámara','abre cámara']].forEach(([a,c])=>{const b=document.createElement('button');b.textContent=a;b.type='button';b.onclick=()=>enviar(c);$('#chips').append(b)});
 
 $('#cfg').onclick=()=>{$('#k').value=cfg.key;$('#mo').value=cfg.model;msg('');$('#dlg').showModal()};
 $('#cl').onclick=()=>$('#dlg').close();
 $('#sv').onclick=()=>{cfg.key=$('#k').value.trim();cfg.model=$('#mo').value.trim()||'openai/gpt-oss-120b';save();msg('Guardado.');if(cfg.key)setTimeout(()=>$('#dlg').close(),600)};
 $('#nt').onclick=async()=>{if(!('Notification' in window))return msg('Este navegador no admite avisos.');const p=await Notification.requestPermission();msg(p==='granted'?'Avisos activados.':'Avisos bloqueados. Actívalos en los permisos del sitio.')};
 $('#te').onclick=async()=>msg(await notify('Prueba de aviso.')?'Aviso enviado.':'Primero activa los avisos.');
-$('#ex').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(mem,null,2)],{type:'application/json'}));a.download='jhonny-memoria-'+new Date().toISOString().slice(0,10)+'.json';a.click();cfg.exp=Date.now();save();msg('Memoria exportada.')};
+$('#ex').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({...mem,cfg:(({key,pin,...r})=>r)(cfg)},null,2)],{type:'application/json'}));a.download='jhonny-memoria-'+new Date().toISOString().slice(0,10)+'.json';a.click();cfg.exp=Date.now();save();msg('Memoria exportada.')};
 $('#im').onclick=()=>$('#imp').click();
-$('#imp').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const j=JSON.parse(await f.text());
+$('#imp').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;let j;try{j=JSON.parse(await f.text())}catch(x){return msg('El archivo no es una memoria válida.')}confirmar('Importar reemplazará tus datos actuales. ¿Continuar?',()=>{try{
  const T=x=>typeof x==='number'?x:(Date.parse(String(x).replace(' ','T'))||0);
  const dt=Array.isArray(j.datos)?j.datos:Object.values(j.datos||{}).map(v=>typeof v==='string'?{texto:v,t:0}:{texto:v.texto,t:v.t||T(v.fecha)});
  const hs=(j.historial||[]).map(h=>({role:h.role,content:h.content,t:h.t||T(h.fecha)}));
- mem={datos:dt,historial:hs,recs:Array.isArray(j.recs)?j.recs:[],contactos:Array.isArray(j.contactos)?j.contactos:[],diario:Array.isArray(j.diario)?j.diario:[],listas:Object.assign({compras:[],tareas:[]},j.listas||{}),habitos:Array.isArray(j.habitos)?j.habitos:[],gastos:Array.isArray(j.gastos)?j.gastos:[],fechas:Array.isArray(j.fechas)?j.fechas:[],cola:[]};save();msg('Memoria importada: '+dt.length+' notas, '+hs.length+' mensajes.')}catch(x){msg('El archivo no es una memoria válida.')}e.target.value=''};
-$('#bn').onclick=()=>{mem.datos=[];save();msg('Notas borradas.')};
-$('#bh').onclick=()=>{mem.historial=[];save();log.innerHTML='';msg('Historial borrado.')};
+ mem={datos:dt,historial:hs,recs:Array.isArray(j.recs)?j.recs:[],contactos:Array.isArray(j.contactos)?j.contactos:[],diario:Array.isArray(j.diario)?j.diario:[],listas:Object.assign({compras:[],tareas:[]},j.listas||{}),habitos:Array.isArray(j.habitos)?j.habitos:[],gastos:Array.isArray(j.gastos)?j.gastos:[],fechas:Array.isArray(j.fechas)?j.fechas:[],cola:[]};sane();if(j.cfg){const{key,pin,...r}=j.cfg;Object.assign(cfg,r)}save();tema();ap();msg('Memoria importada: '+dt.length+' notas, '+hs.length+' mensajes.')}catch(x){msg('El archivo no es una memoria válida.')}})};
+$('#bn').onclick=()=>confirmar('¿Seguro que quieres borrar todas las notas?',()=>{mem.datos=[];save();msg('Notas borradas.')});
+$('#bh').onclick=()=>confirmar('¿Seguro que quieres borrar todo el historial?',()=>{mem.historial=[];save();log.innerHTML='';msg('Historial borrado.')});
 $('#cam').onchange=e=>{if(e.target.files[0])say('Foto capturada, Eddy. No se guarda en Jhonny.');e.target.value=''};
 
 const net=()=>{$('#st').classList.toggle('off',!navigator.onLine);$('#st span').textContent=!navigator.onLine?'Sin conexión':cfg.estudio?'Modo estudio':'En línea'};
 addEventListener('online',net);addEventListener('offline',net);net();
-mem.historial.slice(-6).forEach(h=>add(h.role==='user'?'u':'b',h.content));
+mem.historial.slice(-6).forEach(h=>{const e=add(h.role==='user'?'u':'b',h.content);e.dataset.h=new Date(h.t).toLocaleTimeString('es',{hour:'numeric',minute:'2-digit',hour12:true})});
 say(mem.historial.length?'De vuelta, Eddy.':'Buenas, Eddy. Jhonny en línea.');
 if(!cfg.key)setTimeout(()=>{$('#hint').textContent='Para empezar, escribe tu clave de Groq. Se guarda solo en este teléfono.';$('#dlg').showModal()},2400);
 const DOTS='<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="3" r="2"/><circle cx="10" cy="10" r="2"/><circle cx="10" cy="17" r="2"/></svg>';
 $('#mn').innerHTML=DOTS;
 let scr=null,sel=-1,lpT;
-const pila=[];function abrir(id){cerrarMenu();if(scr){$('#s-'+scr).hidden=true;pila.push(scr)}$('#s-'+id).hidden=false;scr=id;history.pushState({s:id},'');P[id]()}
+const pila=[];function abrir(id){if(scr===id)return;cerrarMenu();if(scr){$('#s-'+scr).hidden=true;pila.push(scr)}$('#s-'+id).hidden=false;scr=id;history.pushState({s:id},'');P[id]()}
 addEventListener('popstate',()=>{if(scr){$('#s-'+scr).hidden=true;scr=pila.pop()||null;if(scr){$('#s-'+scr).hidden=false;P[scr]()}}});
 document.querySelectorAll('.bk').forEach(b=>b.onclick=()=>history.back());
-const MENU=[['Centro de mando','centro'],['Modo estudio','estudio'],['Contactos','contactos'],['Diario','diario'],['Listas','listas'],['Hábitos','habitos'],['Notas','notas'],['Gastos','gastos'],['Fechas','fechas'],['Cronómetro','tiempo'],['Apariencia','apariencia']].map(([t,i])=>[t,()=>abrir(i)]);
+const MENU=[['Centro de mando','centro'],['Modo estudio','estudio'],['Contactos','contactos'],['Diario','diario'],['Listas','listas'],['Hábitos','habitos'],['Notas','notas'],['Gastos','gastos'],['Fechas','fechas'],['Cronómetro','tiempo'],['Acerca de','acerca'],['Apariencia','apariencia']].map(([t,i])=>[t,()=>abrir(i)]);
 const mn=$('#menu');
 MENU.forEach(([t,f])=>{const b=document.createElement('button');b.textContent=t;b.onclick=f;mn.append(b)});
 const pr=document.createElement('button');pr.textContent='Próximamente';pr.disabled=true;mn.append(pr);
@@ -317,7 +323,7 @@ function pCon(){const L=$('#clist'),c=mem.contactos;L.innerHTML='';$('#cadd').hi
   r.innerHTML='<div class="av"></div><div class="i"><b></b><span></span></div><button class="ic" aria-label="Más opciones">'+DOTS+'</button>';
   r.querySelector('.av').textContent=(x.nombre[0]||'?').toUpperCase();r.querySelector('b').textContent=x.nombre;r.querySelector('span').textContent=x.num;
   const d=r.querySelector('button');
-  d.onclick=e=>{e.stopPropagation();const b=d.getBoundingClientRect(),m=$('#pm');m.style.top=b.bottom+4+'px';m.style.left=Math.max(8,b.right-190)+'px';m.hidden=false;sel=i};
+  d.onclick=e=>{e.stopPropagation();const b=d.getBoundingClientRect(),m=$('#pm');m.style.top=Math.min(b.bottom+4,innerHeight-170)+'px';m.style.left=Math.max(8,b.right-190)+'px';m.hidden=false;sel=i};
   r.onpointerdown=e=>{if(e.target.closest('button'))return;lpT=setTimeout(()=>{navigator.vibrate&&navigator.vibrate(30);pedir(i)},600)};
   ['pointerup','pointercancel','pointerleave'].forEach(v=>r.addEventListener(v,()=>clearTimeout(lpT)));
   r.oncontextmenu=e=>e.preventDefault();L.append(r)})}
@@ -339,7 +345,7 @@ const PERS={profesor:'Tu personalidad es la de un profesor paciente y claro: exp
 const sis=()=>{let t=SIS;const q=PERS[cfg.pers];if(q)t=t.replace(/Tu personalidad es formal y seria[^.]*\./,q);return t+(cfg.estudio?ESTUDIO:'')};
 function mk(id,t,x){const e=document.createElement('section');e.className='scr';e.id='s-'+id;e.hidden=true;e.innerHTML='<div class="bar"><button class="bk">Atrás</button><h2>'+t+'</h2>'+(x||'')+'</div><div class="bd"></div>';document.body.append(e);e.querySelector('.bk').onclick=()=>history.back()}
 const mas=i=>'<button class="pl" id="'+i+'" aria-label="Agregar">+</button>';
-mk('diario','Diario',mas('dadd'));mk('listas','Listas',mas('ladd'));mk('habitos','Hábitos',mas('hadd'));mk('apariencia','Apariencia');mk('centro','Centro de mando');mk('notas','Notas',mas('nadd'));mk('gastos','Gastos',mas('gadd'));mk('fechas','Fechas importantes',mas('fadd'));mk('tiempo','Cronómetro y Pomodoro');mk('clima','Clima');
+mk('diario','Diario',mas('dadd'));mk('listas','Listas',mas('ladd'));mk('habitos','Hábitos',mas('hadd'));mk('apariencia','Apariencia');mk('centro','Centro de mando');mk('notas','Notas',mas('nadd'));mk('gastos','Gastos',mas('gadd'));mk('fechas','Fechas importantes',mas('fadd'));mk('tiempo','Cronómetro y Pomodoro');mk('acerca','Acerca de');mk('clima','Clima');
 let txFn,lt='compras';
 function pedirTexto(t,f){$('#txt').textContent=t;$('#txi').value='';txFn=f;$('#tx').showModal()}
 $('#txc').onclick=()=>$('#tx').close();
@@ -379,7 +385,7 @@ function pApa(){const b=$('#s-apariencia .bd');b.innerHTML='<h3>Color</h3><div c
  opt($('#vs'),'Automática',!cfg.vozN,()=>{cfg.vozN='';save();decir('Buenas, Eddy.');pApa()});
  vz().forEach(v=>opt($('#vs'),v.name+' ('+v.lang+')',cfg.vozN===v.name,()=>{cfg.vozN=v.name;save();decir('Buenas, Eddy.');pApa()}));
  const c=$('#sl');slider(c,'Velocidad de la voz',0.5,1.5,0.1,'vel',1,x=>x.toFixed(1)+'x');slider(c,'Tono de la voz (a la izquierda, más grave)',0.4,1.4,0.05,'tono',0.75,x=>x.toFixed(2));slider(c,'Tamaño de letra',14,22,1,'letra',16,x=>x+' px')}
-const P={notas:pNot,gastos:pGas,fechas:pFec,tiempo:pTie,centro:pCen,clima:pCli,estudio:pEst,contactos:pCon,diario:pDia,listas:pLis,habitos:pHab,apariencia:pApa};
+const P={acerca:pAce,notas:pNot,gastos:pGas,fechas:pFec,tiempo:pTie,centro:pCen,clima:pCli,estudio:pEst,contactos:pCon,diario:pDia,listas:pLis,habitos:pHab,apariencia:pApa};
 tema();
 
 const UN={};(function(){const A=(t,f,...ks)=>ks.forEach(k=>UN[k]=[t,f]);
@@ -421,10 +427,10 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)oculto=Date
 if(cfg.pin)bloquear();
 
 const ap=()=>{document.body.style.fontSize=(cfg.letra||16)+'px'};ap();
-function slider(c,t,mn,mx,st,k,df,fm){const d=document.createElement('div');d.style.marginTop='14px';const v=cfg[k]??df;
+let sT;function slider(c,t,mn,mx,st,k,df,fm){const d=document.createElement('div');d.style.marginTop='14px';const v=cfg[k]??df;
  d.innerHTML='<div style="color:var(--dim);font-size:14px"></div><input type="range" min="'+mn+'" max="'+mx+'" step="'+st+'" value="'+v+'" aria-label="'+t+'">';
  const e=d.firstChild,r=d.lastChild,u=x=>e.textContent=t+': '+fm(x);u(v);
- r.oninput=()=>{cfg[k]=+r.value;save();u(+r.value);if(k==='letra')ap()};r.onchange=()=>{if(k==='vel'||k==='tono')decir('Buenas, Eddy.')};c.append(d)}
+ r.oninput=()=>{cfg[k]=+r.value;clearTimeout(sT);sT=setTimeout(save,400);u(+r.value);if(k==='letra')ap()};r.onchange=()=>{if(k==='vel'||k==='tono')decir('Buenas, Eddy.')};c.append(d)}
 if(window.speechSynthesis)speechSynthesis.onvoiceschanged=()=>{if(scr==='apariencia')pApa()};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const cond=c=>c===0?'despejado':c<4?'nubes':c<50?'niebla':c<70?'lluvia':c<80?'nieve':c<90?'chubascos':'tormenta';
@@ -445,10 +451,10 @@ function pCen(){const b=$('#s-centro .bd'),n=new Date(),T=mem.listas.tareas.filt
  datosClima().then(d=>{$('#ct1').textContent=Math.round(d.current.temperature_2m)+' °C';$('#ct2').textContent=cond(d.current.weather_code)+(d._viejo?' · sin conexión':'')}).catch(()=>{$('#ct2').textContent='Sin datos'})}
 async function pCli(){const b=$('#s-clima .bd');b.innerHTML='<div class="vac"><p>Cargando…</p></div>';
  try{const d=await datosClima(),k=d.current,y=d.daily;
-  b.innerHTML='<div style="text-align:center;margin-bottom:12px"><small style="color:var(--dim)">'+(d._viejo?'Sin conexión · actualizado '+fd(d._t):'Tu ubicación')+'</small><div style="font-size:26px;color:var(--cy)">'+Math.round(k.temperature_2m)+' °C · '+cond(k.weather_code)+'</div><small style="color:var(--dim)">Sensación '+Math.round(k.apparent_temperature)+' °C</small></div><div id="dl"></div>';
+  b.innerHTML='<div style="text-align:center;margin-bottom:12px"><small style="color:var(--dim)">'+(d._viejo?'Sin conexión · actualizado '+fd(d._t):'Tu ubicación · actualizado '+fd(d._t||Date.now()))+'</small><div style="font-size:26px;color:var(--cy)">'+Math.round(k.temperature_2m)+' °C · '+cond(k.weather_code)+'</div><small style="color:var(--dim)">Sensación '+Math.round(k.apparent_temperature)+' °C</small></div><div id="dl"></div><button id="clr" style="margin-top:8px;width:100%">Actualizar</button>';
   y.time.forEach((f,i)=>{const r=document.createElement('div');r.className='cd dl';if(!i)r.style.borderColor='var(--cy)';
-   r.innerHTML='<b>'+(i?new Date(f+'T12:00').toLocaleDateString('es',{weekday:'short'}):'Hoy')+'</b><span>'+cond(y.weather_code[i])+'</span><span>'+Math.round(y.temperature_2m_max[i])+'° / '+Math.round(y.temperature_2m_min[i])+'°</span><em>'+(y.precipitation_probability_max[i]??0)+'%</em>';$('#dl').append(r)})}
- catch(e){b.innerHTML='<div class="vac"><p>No pude obtener el clima. Revisa el permiso de ubicación y tu conexión.</p></div>'}}
+   r.innerHTML='<b>'+(i?new Date(f+'T12:00').toLocaleDateString('es',{weekday:'short'}):'Hoy')+'</b><span>'+cond(y.weather_code[i])+'</span><span>'+Math.round(y.temperature_2m_max[i])+'° / '+Math.round(y.temperature_2m_min[i])+'°</span><em>'+(y.precipitation_probability_max[i]??0)+'%</em>';$('#dl').append(r)});$('#clr').onclick=()=>{clC=null;pCli()}}
+ catch(e){b.innerHTML='<div class="vac"><p>'+(e&&e.code===1?'Negaste el permiso de ubicación. Actívalo en los permisos del sitio en Chrome y vuelve a intentar.':'No pude obtener el clima. Revisa tu conexión.')+'</p><button id="clr">Reintentar</button></div>';$('#clr').onclick=()=>{ubic=null;clC=null;pCli()}}}
 setInterval(()=>{if(scr==='centro')pCen()},60000);
 
 if(!cfg.ini){cfg.ini=Date.now();save()}
@@ -495,6 +501,15 @@ function pTie(){const b=$('#s-tiempo .bd');b.innerHTML='<div class="cd"><small>C
 function pTic(){if(!$('#cv'))return;$('#cv').textContent=mmss(cr+(crT?Date.now()-crT:0));$('#c1b').textContent=crT?'Pausar':cr?'Continuar':'Iniciar';$('#pv').textContent=pm?pm.f+' '+mmss(pm.fin-Date.now()):'Listo';$('#p1b').textContent=pm?'En curso':'Iniciar'}
 function pomo(){if(pm&&Date.now()>=pm.fin){const f=pm.f==='Enfoque';pm={f:f?'Descanso':'Enfoque',fin:Date.now()+(f?3e5:15e5)};const t=f?'Hora de descansar 5 minutos.':'A enfocarse otros 25 minutos.';say(t);notify(t);navigator.vibrate&&navigator.vibrate([300,150,300]);beep()}}
 setInterval(()=>{pomo();if(scr==='tiempo')pTic()},500);
+
+
+function pAce(){$('#s-acerca .bd').innerHTML='<div class="cd"><b style="color:var(--cy)">Jhonny 2.0</b><small>Asistente personal de Eddy</small></div><div class="cd"><small>Tus datos</small>Notas, contactos, diario, listas, hábitos, gastos y fechas se guardan solo en este teléfono.</div><div class="cd"><small>Lo que sale del teléfono</small>Tus mensajes del chat se envían a Groq para generar la respuesta. El clima usa tu ubicación y el servicio Open-Meteo. La voz y el micrófono usan los servicios de Chrome.</div><div class="cd"><small>Créditos</small>IA: Groq. Clima: Open-Meteo.</div>'}
+$('#pml').onclick=()=>{location.href='tel:'+mem.contactos[sel].num};
+$('#pmw').onclick=()=>{location.href='https://wa.me/'+mem.contactos[sel].num.replace(/\D/g,'')};
+$('#kv').onclick=()=>{const k=$('#k');k.type=k.type==='password'?'text':'password';$('#kv').textContent=k.type==='password'?'Mostrar clave':'Ocultar clave'};
+$('#kt').onclick=async()=>{const k=$('#k').value.trim()||cfg.key;if(!k)return msg('Escribe tu clave primero.');msg('Probando…');try{const r=await fetch('https://api.groq.com/openai/v1/models',{headers:{Authorization:'Bearer '+k},signal:AbortSignal.timeout(15000)});msg(r.ok?'La clave funciona.':r.status===401?'La clave no es válida.':'Groq respondió con el error '+r.status+'.')}catch(e){msg('No pude conectar. Revisa tu internet.')}};
+$('#bl').onclick=()=>{if(!cfg.pin)return msg('Primero pon un PIN.');$('#dlg').close();bloquear()};
+log.addEventListener('scroll',()=>{$('#fin').hidden=log.scrollHeight-log.scrollTop-log.clientHeight<200});$('#fin').onclick=()=>{log.scrollTop=log.scrollHeight};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
 tick();
 </script></body></html>
