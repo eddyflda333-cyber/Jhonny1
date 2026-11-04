@@ -6,10 +6,10 @@
 <link rel="icon" href="icon-192.png">
 <title>Jhonny</title>
 <style>
-:root{--bg:#050b14;--pn:#0a1626;--ln:#12384f;--cy:#4de3ff;--bl:#2a8cff;--tx:#d8f4ff;--dim:#6f93a8;--er:#ff7b7b}
+:root{--g:#0b2a44;--ub:#0d2a44;--bg:#050b14;--pn:#0a1626;--ln:#12384f;--cy:#4de3ff;--bl:#2a8cff;--tx:#d8f4ff;--dim:#6f93a8;--er:#ff7b7b}
 *{box-sizing:border-box;margin:0}
 html,body{height:100%}
-body{background:radial-gradient(120% 60% at 50% -10%,#0b2a44,var(--bg) 60%);color:var(--tx);font:16px/1.5 system-ui,sans-serif;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+body{background:radial-gradient(120% 60% at 50% -10%,var(--g),var(--bg) 60%);color:var(--tx);font:16px/1.5 system-ui,sans-serif;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--ln)}
 h1{font-size:20px;font-weight:600;letter-spacing:.35em;color:var(--cy)}
 #st{font-size:12px;color:var(--dim);display:flex;align-items:center;gap:6px}
@@ -20,7 +20,7 @@ button:active{background:var(--ln)}
 button:focus-visible,input:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
 #log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
 .m{max-width:88%;white-space:pre-wrap;overflow-wrap:anywhere}
-.u{align-self:flex-end;background:#0d2a44;border:1px solid var(--bl);border-radius:14px 14px 2px 14px;padding:8px 12px}
+.u{align-self:flex-end;background:var(--ub);border:1px solid var(--bl);border-radius:14px 14px 2px 14px;padding:8px 12px}
 .b{align-self:flex-start;border-left:2px solid var(--cy);padding:2px 0 2px 12px}
 .b.er{border-color:var(--er);color:var(--er)}
 .cp{align-self:flex-start;font-size:14px;color:var(--cy);margin-left:12px}
@@ -41,8 +41,13 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--cy);outline-off
 .seg button{padding:14px}
 .seg button[aria-pressed=true]{background:var(--bl);border-color:var(--bl);color:#fff;font-weight:600}
 .ct{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--ln);user-select:none;-webkit-user-select:none;touch-action:manipulation}
-.av{width:40px;height:40px;border-radius:50%;background:#0d2a44;border:1px solid var(--bl);display:grid;place-items:center;color:var(--cy);font-weight:600}
+.av{width:40px;height:40px;border-radius:50%;background:var(--ub);border:1px solid var(--bl);display:grid;place-items:center;color:var(--cy);font-weight:600}
 .ct .i{flex:1;min-width:0}.ct .i b{display:block;overflow-wrap:anywhere}.ct .i span{color:var(--dim);font-size:14px}
+.pl{font-size:22px;line-height:1;padding:6px 14px}
+.ck{width:22px;height:22px;accent-color:var(--cy);flex:none}
+.ct .i b{white-space:pre-wrap}
+.bo{font-size:14px;padding:6px 10px;color:var(--er)}
+.bd h3{font-size:14px;color:var(--dim);margin-top:8px;font-weight:400}
 .vac{text-align:center;padding:56px 16px;color:var(--dim)}.vac p{margin-bottom:16px;font-size:18px}
 #intro{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s}
 #intro.out{opacity:0;pointer-events:none}
@@ -66,7 +71,8 @@ dialog{margin:auto;width:min(92vw,420px);background:var(--pn);color:var(--tx);bo
 dialog::backdrop{background:#000a}
 dialog h2{font-size:18px;margin-bottom:10px;color:var(--cy)}
 dialog label{display:block;font-size:14px;color:var(--dim);margin:10px 0 4px}
-dialog input:not([type=checkbox]){width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--ln);border-radius:8px;padding:9px;font:inherit}
+dialog textarea{resize:none}
+dialog input:not([type=checkbox]),dialog textarea{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--ln);border-radius:8px;padding:9px;font:inherit}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .row .w{grid-column:1/-1}
 #ok{font-size:14px;color:var(--cy);min-height:1.4em;margin-top:8px}
@@ -103,8 +109,10 @@ dialog input:not([type=checkbox]){width:100%;background:var(--bg);color:var(--tx
 <section class="scr" id="s-contactos" hidden>
 <div class="bar"><button class="bk">Atrás</button><h2>Contactos</h2><button id="cadd" aria-label="Agregar contacto" style="font-size:22px;line-height:1;padding:6px 14px">+</button></div>
 <div class="bd" id="clist"></div></section>
-<dialog id="cf"><h2>Eliminar contacto</h2><p id="cft" style="margin:6px 0 12px;white-space:pre-line"></p>
+<dialog id="cf"><h2>Eliminar</h2><p id="cft" style="margin:6px 0 12px;white-space:pre-line"></p>
 <div class="row"><button id="cfn">Cancelar</button><button id="cfy" style="background:var(--er);border-color:var(--er);color:#000;font-weight:600">Eliminar</button></div></dialog>
+<dialog id="tx"><h2 id="txt"></h2><textarea id="txi" rows="3" aria-label="Texto"></textarea>
+<div class="row"><button id="txc">Cancelar</button><button id="txy" style="background:var(--bl);border-color:var(--bl);color:#fff">Guardar</button></div></dialog>
 <dialog id="ad"><h2>Nuevo contacto</h2><label for="an">Nombre</label><input type="text" id="an" autocomplete="off">
 <label for="at">Número</label><input type="tel" id="at" autocomplete="off" placeholder="Con código de país">
 <div class="row"><button id="acn">Cancelar</button><button id="acy" style="background:var(--bl);border-color:var(--bl);color:#fff">Guardar</button></div>
@@ -113,7 +121,7 @@ dialog input:not([type=checkbox]){width:100%;background:var(--bg);color:var(--tx
 const $=s=>document.querySelector(s),S=localStorage,URL_='https://api.groq.com/openai/v1/chat/completions';
 const ld=(k,d)=>{try{return JSON.parse(S[k])||d}catch(e){return d}};
 let cfg=ld('cfg',{key:'',model:'openai/gpt-oss-120b'}),mem=ld('mem',{datos:[],historial:[],recs:[]}),busy=false;
-mem.contactos=mem.contactos||[];
+mem.contactos=mem.contactos||[];mem.diario=mem.diario||[];mem.listas=Object.assign({compras:[],tareas:[]},mem.listas||{});mem.habitos=mem.habitos||[];
 const save=()=>{S.cfg=JSON.stringify(cfg);S.mem=JSON.stringify(mem)};
 const SIS='Eres Jhonny, el asistente personal de Eddy, inspirado en JARVIS de Iron Man. Tu personalidad es formal y seria, sin bromas ni humor forzado, pero no excesivamente ceremoniosa: a veces puedes ser cercano. El nombre de tu usuario es Eddy, úsalo de vez en cuando. Responde siempre en español correcto y claro, sin groserías ni informalidad aunque Eddy las use. Reglas importantes: 1. No des consejos médicos, legales o financieros serios; recomienda hablar con un adulto o profesional. 2. En tareas escolares, no des solo la respuesta final: explica el procedimiento para que Eddy aprenda. 3. No opines sobre temas personales o conflictos de Eddy a menos que él te lo pida explícitamente. 4. No finjas ser una persona real ni tener sentimientos o cuerpo; eres una IA que ayuda a Eddy. Si no sabes algo o no tienes esa información (clima en tiempo real, noticias actuales, datos recientes), dilo claramente en vez de inventar una respuesta. No tienes acceso a internet en vivo ni puedes ver la pantalla del celular, solo lo que te escriben. IMPORTANTE: la pantalla es de texto plano, sin soporte para formato. No uses nunca asteriscos (** o *), numerales (#), guiones de lista (-), ni notación LaTeX como \\( \\) o \\[ \\]. Para matemáticas, usa símbolos normales: *, /, +, -, ^, paréntesis. Para listas, usa números seguidos de punto. No uses emojis ni emoticonos bajo ninguna circunstancia. Sé muy breve: responde en 1 a 3 frases como máximo, salvo que Eddy pida explícitamente más detalle o una explicación larga. Nunca des contexto, advertencias ni explicaciones que no se pidieron.';
 const ESTUDIO=' MODO ESTUDIO ACTIVO: Eddy está estudiando. Ignora el límite de 3 frases: puedes extenderte hasta 8 frases. Explica paso a paso con claridad y un ejemplo sencillo, sin dar solo la respuesta final. Termina con una pregunta de práctica corta para que Eddy responda. Cuando Eddy responda a tu pregunta, dile si es correcto y explica el error si lo hay.';
@@ -188,7 +196,7 @@ function fail(e,t){e.classList.remove('live');e.classList.add('er');e.textConten
 async function ia(texto,plano){
  if(!cfg.key){say('Falta la clave de Groq. Escríbela en Ajustes.');$('#dlg').showModal();return}
  mem.historial.push({role:'user',content:texto,t:Date.now()});
- const ms=[{role:'system',content:cfg.estudio&&!plano?SIS+ESTUDIO:SIS},...mem.historial.slice(-20).map(({role,content})=>({role,content}))];
+ const ms=[{role:'system',content:plano?SIS:sis()},...mem.historial.slice(-20).map(({role,content})=>({role,content}))];
  const el=add('b live','');
  for(let i=0;i<3;i++){
   try{
@@ -225,7 +233,7 @@ $('#imp').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const j=
  const T=x=>typeof x==='number'?x:(Date.parse(String(x).replace(' ','T'))||0);
  const dt=Array.isArray(j.datos)?j.datos:Object.values(j.datos||{}).map(v=>typeof v==='string'?{texto:v,t:0}:{texto:v.texto,t:v.t||T(v.fecha)});
  const hs=(j.historial||[]).map(h=>({role:h.role,content:h.content,t:h.t||T(h.fecha)}));
- mem={datos:dt,historial:hs,recs:Array.isArray(j.recs)?j.recs:[],contactos:Array.isArray(j.contactos)?j.contactos:[]};save();msg('Memoria importada: '+dt.length+' notas, '+hs.length+' mensajes.')}catch(x){msg('El archivo no es una memoria válida.')}e.target.value=''};
+ mem={datos:dt,historial:hs,recs:Array.isArray(j.recs)?j.recs:[],contactos:Array.isArray(j.contactos)?j.contactos:[],diario:Array.isArray(j.diario)?j.diario:[],listas:Object.assign({compras:[],tareas:[]},j.listas||{}),habitos:Array.isArray(j.habitos)?j.habitos:[]};save();msg('Memoria importada: '+dt.length+' notas, '+hs.length+' mensajes.')}catch(x){msg('El archivo no es una memoria válida.')}e.target.value=''};
 $('#bn').onclick=()=>{mem.datos=[];save();msg('Notas borradas.')};
 $('#bh').onclick=()=>{mem.historial=[];save();log.innerHTML='';msg('Historial borrado.')};
 $('#cam').onchange=e=>{if(e.target.files[0])say('Foto capturada, Eddy. No se guarda en Jhonny.');e.target.value=''};
@@ -238,10 +246,10 @@ if(!cfg.key)setTimeout(()=>{$('#hint').textContent='Para empezar, escribe tu cla
 const DOTS='<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="3" r="2"/><circle cx="10" cy="10" r="2"/><circle cx="10" cy="17" r="2"/></svg>';
 $('#mn').innerHTML=DOTS;
 let scr=null,sel=-1,lpT;
-function abrir(id){cerrarMenu();$('#s-'+id).hidden=false;scr=id;history.pushState({s:id},'');id==='estudio'?pEst():pCon()}
+function abrir(id){cerrarMenu();$('#s-'+id).hidden=false;scr=id;history.pushState({s:id},'');P[id]()}
 addEventListener('popstate',()=>{if(scr){$('#s-'+scr).hidden=true;scr=null}});
 document.querySelectorAll('.bk').forEach(b=>b.onclick=()=>history.back());
-const MENU=[['Modo estudio',()=>abrir('estudio')],['Contactos',()=>abrir('contactos')]];
+const MENU=[['Modo estudio','estudio'],['Contactos','contactos'],['Diario','diario'],['Listas','listas'],['Hábitos','habitos'],['Apariencia','apariencia']].map(([t,i])=>[t,()=>abrir(i)]);
 const mn=$('#menu');
 MENU.forEach(([t,f])=>{const b=document.createElement('button');b.textContent=t;b.onclick=f;mn.append(b)});
 const pr=document.createElement('button');pr.textContent='Próximamente';pr.disabled=true;mn.append(pr);
@@ -264,16 +272,62 @@ function pCon(){const L=$('#clist'),c=mem.contactos;L.innerHTML='';$('#cadd').hi
   r.onpointerdown=e=>{if(e.target.closest('button'))return;lpT=setTimeout(()=>{navigator.vibrate&&navigator.vibrate(30);pedir(i)},600)};
   ['pointerup','pointercancel','pointerleave'].forEach(v=>r.addEventListener(v,()=>clearTimeout(lpT)));
   r.oncontextmenu=e=>e.preventDefault();L.append(r)})}
-function pedir(i){sel=i;$('#cft').textContent='¿Seguro que quieres eliminar este contacto?\n'+mem.contactos[i].nombre;$('#cf').showModal()}
+let delFn;function confirmar(m,f){delFn=f;$('#cft').textContent=m;$('#cf').showModal()}
+function pedir(i){sel=i;confirmar('¿Seguro que quieres eliminar este contacto?\n'+mem.contactos[i].nombre,()=>{mem.contactos.splice(i,1);save();pCon()})}
 $('#pmd').onclick=()=>pedir(sel);
 $('#cfn').onclick=()=>$('#cf').close();
-$('#cfy').onclick=()=>{mem.contactos.splice(sel,1);save();$('#cf').close();pCon()};
+$('#cfy').onclick=()=>{$('#cf').close();delFn&&delFn()};
 function nuevo(){$('#an').value='';$('#at').value='';$('#aer').textContent='';$('#ad').showModal()}
 $('#cadd').onclick=nuevo;$('#acn').onclick=()=>$('#ad').close();
 $('#acy').onclick=()=>{const n=$('#an').value.trim().replace(/^(de|mi|la|el)\s+/i,''),t=$('#at').value.replace(/[\s-]/g,'');
  if(!n)return $('#aer').textContent='Escribe un nombre.';
  if(!/^\+?\d{7,}$/.test(t))return $('#aer').textContent='Escribe un número válido, de 7 dígitos o más.';
  mem.contactos=mem.contactos.filter(x=>norm(x.nombre).replace(/^(de|mi|la|el)\s+/,'')!==norm(n));mem.contactos.push({nombre:n,num:t});save();$('#ad').close();pCon()};
+
+const TEMAS={cian:{cy:'#4de3ff',bl:'#2a8cff',ln:'#12384f',g:'#0b2a44',ub:'#0d2a44'},morado:{cy:'#c792ff',bl:'#8b5cf6',ln:'#3b2a5e',g:'#1d1238',ub:'#241546'},verde:{cy:'#5dffa8',bl:'#16a34a',ln:'#144a2e',g:'#0b3320',ub:'#0f3d27'},rojo:{cy:'#ff6b6b',bl:'#e11d48',ln:'#5a1a24',g:'#3a0e16',ub:'#4a121c'},dorado:{cy:'#ffd45e',bl:'#d97706',ln:'#5a4210',g:'#3a2a08',ub:'#4a3509'}};
+function tema(){const t=TEMAS[cfg.color]||TEMAS.cian;for(const k in t)document.documentElement.style.setProperty('--'+k,t[k])}
+const PERS={profesor:'Tu personalidad es la de un profesor paciente y claro: explicas con ejemplos sencillos, animas a Eddy a razonar por sí mismo y compruebas que haya entendido.',directo:'Tu personalidad es directa y concisa: respondes en una sola frase siempre que sea posible, sin rodeos ni cortesías innecesarias.'};
+const sis=()=>{let t=SIS;const q=PERS[cfg.pers];if(q)t=t.replace(/Tu personalidad es formal y seria[^.]*\./,q);return t+(cfg.estudio?ESTUDIO:'')};
+function mk(id,t,x){const e=document.createElement('section');e.className='scr';e.id='s-'+id;e.hidden=true;e.innerHTML='<div class="bar"><button class="bk">Atrás</button><h2>'+t+'</h2>'+(x||'')+'</div><div class="bd"></div>';document.body.append(e);e.querySelector('.bk').onclick=()=>history.back()}
+const mas=i=>'<button class="pl" id="'+i+'" aria-label="Agregar">+</button>';
+mk('diario','Diario',mas('dadd'));mk('listas','Listas',mas('ladd'));mk('habitos','Hábitos',mas('hadd'));mk('apariencia','Apariencia');
+let txFn,lt='compras';
+function pedirTexto(t,f){$('#txt').textContent=t;$('#txi').value='';txFn=f;$('#tx').showModal()}
+$('#txc').onclick=()=>$('#tx').close();
+$('#txy').onclick=()=>{const v=$('#txi').value.trim();if(!v)return;$('#tx').close();txFn(v)};
+function fila(b,t,sub,borrar,chk){const r=document.createElement('div');r.className='ct';
+ r.innerHTML=(chk?'<input type="checkbox" class="ck" aria-label="Marcar">':'')+'<div class="i"><b></b><span></span></div><button class="bo">Borrar</button>';
+ r.querySelector('b').textContent=t;r.querySelector('span').textContent=sub||'';r.querySelector('.bo').onclick=borrar;
+ if(chk){const c=r.querySelector('.ck');c.checked=chk.ok;c.onchange=chk.fn;if(chk.ok)r.querySelector('b').style.textDecoration='line-through'}b.append(r)}
+const vacio=(b,m,id,bt)=>{b.innerHTML='<div class="vac"><p>'+m+'</p>'+(bt?'<button id="'+id+'">'+bt+'</button>':'')+'</div>'};
+function pDia(){const b=$('#s-diario .bd');b.innerHTML='';
+ if(!mem.diario.length){vacio(b,'Tu diario está vacío','d1','Escribir primera entrada');$('#d1').onclick=nuevaDia;return}
+ mem.diario.map((e,i)=>[e,i]).reverse().forEach(([e,i])=>fila(b,e.x,fd(e.t),()=>confirmar('¿Seguro que quieres eliminar esta entrada?',()=>{mem.diario.splice(i,1);save();pDia()})))}
+function nuevaDia(){pedirTexto('Nueva entrada',x=>{mem.diario.push({t:Date.now(),x});save();pDia()})}
+$('#dadd').onclick=nuevaDia;
+function pLis(){const b=$('#s-listas .bd');b.innerHTML='<div class="seg"><button id="lt0">Compras</button><button id="lt1">Tareas</button></div><div id="li"></div>';
+ [['lt0','compras'],['lt1','tareas']].forEach(([i,k])=>{const e=$('#'+i);e.setAttribute('aria-pressed',lt===k);e.onclick=()=>{lt=k;pLis()}});
+ const L=mem.listas[lt],c=$('#li');
+ if(!L.length){vacio(c,lt==='compras'?'Tu lista de compras está vacía':'No tienes tareas pendientes');return}
+ L.forEach((x,i)=>fila(c,x.t,'',()=>confirmar('¿Seguro que quieres eliminar esto?\n'+x.t,()=>{L.splice(i,1);save();pLis()}),{ok:x.ok,fn:e=>{x.ok=e.target.checked;save();pLis()}}));
+ if(L.some(x=>x.ok)){const q=document.createElement('button');q.textContent='Quitar marcados';q.style.marginTop='12px';q.onclick=()=>{mem.listas[lt]=L.filter(x=>!x.ok);save();pLis()};c.append(q)}}
+$('#ladd').onclick=()=>pedirTexto(lt==='compras'?'Agregar a compras':'Nueva tarea',t=>{mem.listas[lt].push({t,ok:false});save();pLis()});
+const dia=d=>d.toLocaleDateString('en-CA');
+function racha(h){let n=0,d=new Date();if(!h.dias.includes(dia(d)))d.setDate(d.getDate()-1);while(h.dias.includes(dia(d))){n++;d.setDate(d.getDate()-1)}return n}
+function pHab(){const b=$('#s-habitos .bd');b.innerHTML='';
+ if(!mem.habitos.length){vacio(b,'Aún no tienes hábitos','h1','Agregar primer hábito');$('#h1').onclick=nuevoHab;return}
+ b.innerHTML='<p style="color:var(--dim);margin-bottom:8px">Marca cada hábito cuando lo cumplas hoy.</p><div id="hb"></div>';
+ mem.habitos.forEach((h,i)=>{const n=racha(h),hoy=dia(new Date());
+  fila($('#hb'),h.n,'Racha: '+n+(n===1?' día':' días'),()=>confirmar('¿Seguro que quieres eliminar este hábito?\n'+h.n,()=>{mem.habitos.splice(i,1);save();pHab()}),
+  {ok:h.dias.includes(hoy),fn:e=>{h.dias=h.dias.filter(x=>x!==hoy);if(e.target.checked)h.dias.push(hoy);save();pHab()}})})}
+function nuevoHab(){pedirTexto('Nuevo hábito',n=>{mem.habitos.push({n,dias:[]});save();pHab()})}
+$('#hadd').onclick=nuevoHab;
+function opt(c,t,on,f){const e=document.createElement('button');e.textContent=t;e.setAttribute('aria-pressed',on);e.onclick=f;c.append(e)}
+function pApa(){const b=$('#s-apariencia .bd');b.innerHTML='<h3>Color</h3><div class="seg" id="ac"></div><h3>Personalidad</h3><div class="seg" id="ap" style="grid-template-columns:1fr"></div>';
+ Object.keys(TEMAS).forEach(k=>opt($('#ac'),k[0].toUpperCase()+k.slice(1),(cfg.color||'cian')===k,()=>{cfg.color=k;save();tema();pApa()}));
+ [['formal','Formal estilo JARVIS'],['profesor','Profesor'],['directo','Directo y breve']].forEach(([k,n])=>opt($('#ap'),n,(cfg.pers||'formal')===k,()=>{cfg.pers=k;save();pApa()}))}
+const P={estudio:pEst,contactos:pCon,diario:pDia,listas:pLis,habitos:pHab,apariencia:pApa};
+tema();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
 tick();
 </script></body></html>
