@@ -165,7 +165,7 @@ const $=s=>document.querySelector(s),S=localStorage,URL_='https://api.groq.com/o
 const ld=(k,d)=>{try{return JSON.parse(S[k])||d}catch(e){return d}};
 let cfg=ld('cfg',{key:'',model:'openai/gpt-oss-120b'}),mem=ld('mem',{datos:[],historial:[],recs:[]}),busy=false;
 function sane(){['datos','historial','recs','contactos','diario','habitos','gastos','fechas','cola'].forEach(k=>{if(!Array.isArray(mem[k]))mem[k]=[]});mem.recs=mem.recs.filter(r=>r&&Number.isFinite(r.due));if(!mem.listas||typeof mem.listas!=='object')mem.listas={};['compras','tareas'].forEach(k=>{if(!Array.isArray(mem.listas[k]))mem.listas[k]=[]})}
-sane();sane2();
+sane();sane2();migrar();
 let svW=0;const save=()=>{try{S.cfg=JSON.stringify(cfg.keyEnc?{...cfg,key:''}:cfg);S.mem=JSON.stringify(mem)}catch(e){if(!svW){svW=1;alert('Jhonny no pudo guardar: el teléfono se quedó sin espacio. Exporta tu memoria y borra datos viejos.')}}};
 const SIS='Eres Jhonny, el asistente personal de Eddy, inspirado en JARVIS de Iron Man. Tu personalidad es formal y seria, sin bromas ni humor forzado, pero no excesivamente ceremoniosa: a veces puedes ser cercano. El nombre de tu usuario es Eddy, úsalo de vez en cuando. Responde siempre en español correcto y claro, sin groserías ni informalidad aunque Eddy las use. Reglas importantes: 1. No des consejos médicos, legales o financieros serios; recomienda hablar con un adulto o profesional. 2. En tareas escolares, no des solo la respuesta final: explica el procedimiento para que Eddy aprenda. 3. No opines sobre temas personales o conflictos de Eddy a menos que él te lo pida explícitamente. 4. No finjas ser una persona real ni tener sentimientos o cuerpo; eres una IA que ayuda a Eddy. Si no sabes algo o no tienes esa información (noticias actuales, datos recientes), dilo claramente en vez de inventar una respuesta. No puedes buscar en internet ni ver la pantalla del celular; solo conoces lo que te escriben y los datos que la app te entrega. IMPORTANTE: la pantalla es de texto plano, sin soporte para formato. No uses nunca asteriscos (** o *), numerales (#), guiones de lista (-), ni notación LaTeX como \\( \\) o \\[ \\]. Para matemáticas, usa símbolos normales: *, /, +, -, ^, paréntesis. Para listas, usa números seguidos de punto. No uses emojis ni emoticonos bajo ninguna circunstancia. Sé muy breve: responde en 1 a 3 frases como máximo, salvo que Eddy pida explícitamente más detalle o una explicación larga. Nunca des contexto, advertencias ni explicaciones que no se pidieron.';
 const ESTUDIO=' MODO ESTUDIO ACTIVO: Eddy está estudiando. Ignora el límite de 3 frases: puedes extenderte hasta 8 frases. Explica paso a paso con claridad y un ejemplo sencillo, sin dar solo la respuesta final. Termina con una pregunta de práctica corta para que Eddy responda. Cuando Eddy responda a tu pregunta, dile si es correcto y explica el error si lo hay.';
@@ -240,7 +240,7 @@ async function local(o){o=o.replace(/^[¿¡\s]+|[?!\s]+$/g,'');
  if(/^(callate|callar|silencio|detente)$/.test(n)){window.speechSynthesis&&speechSynthesis.cancel();return 'Silencio, Eddy.'}
  if(/^(buenos dias|buen dia|resumen del dia|mi dia|resumen)$/.test(n))return await resumen();
  if(/^(pomodoro|cronometro)$/.test(n)){abrir('tiempo');return 'Abriendo el cronómetro, Eddy.'}
- if(c=n.match(/^busca(?:r)?\s+(.+?)\s+en\s+(?:el\s+)?historial$/)||n.match(/^busca(?:r)?\s+en\s+(?:el\s+)?historial\s*:?\s*(.+)$/)){const H=mem.historial.filter(h=>norm(h.content).includes(c[1])).slice(-5);return H.length?H.map(h=>fd(h.t)+' '+(h.role==='user'?'Tú':'Jhonny')+': '+h.content.slice(0,80)).join('\n'):'No encontré nada, Eddy.'}
+ if(c=n.match(/^busca(?:r)?\s+(.+?)\s+en\s+(?:el\s+)?historial$/)||n.match(/^busca(?:r)?\s+en\s+(?:el\s+)?historial\s*:?\s*(.+)$/)){const H=mem.chats.flatMap(k=>k.msgs).filter(h=>norm(h.content).includes(c[1])).slice(-5);return H.length?H.map(h=>fd(h.t)+' '+(h.role==='user'?'Tú':'Jhonny')+': '+h.content.slice(0,80)).join('\n'):'No encontré nada, Eddy.'}
  if(c=n.match(/^gaste\s+(.+)$/)){const g=addGasto(cola(c[1]));if(g)return 'Gasto registrado: $'+g.m+' en '+g.c+'.'}
  if(/^(cuanto he gastado|mis gastos|gastos)$/.test(n)){const r=resG();return r.M.length?'Este mes llevas $'+r.T+'. '+Object.entries(r.C).map(([k,v])=>k+' $'+v).join(', ')+'.':'No has registrado gastos este mes, Eddy.'}
  if(c=n.match(/^(?:agrega|anota|guarda)\s+(?:el\s+)?cumpleanos(?:\s+de)?\s+(.+?)\s+(\d{1,2})[\/\-](\d{1,2})$/)){const nm=ot.substr(n.indexOf(c[1],n.indexOf('cumpleanos')+9),c[1].length);return addFecha('Cumpleaños de '+nm,+c[2],+c[3])?'Guardado: cumpleaños de '+nm+' el '+c[2]+'/'+c[3]+'.':'Revisa la fecha, Eddy. Usa día/mes, por ejemplo 15/03.'}
@@ -269,8 +269,8 @@ function fail(e,t){e.setAttribute('role','alert');e.classList.remove('live');e.c
 async function ia0(texto,plano){
  if(!cfg.key){say('Falta la clave de Groq. Escríbela en Ajustes.');$('#dlg').showModal();return}
  if(!navigator.onLine){mem.cola.push(texto);save();say('Sin conexión, Eddy. Guardé tu mensaje y lo enviaré cuando vuelva la señal.');return}
- mem.historial.push({role:'user',content:texto,t:Date.now()});
- const H=mem.historial.filter(h=>h.t>=(cfg.corte||0)).slice(-20).map(({role,content})=>({role,content}));while(H.length>1&&H.reduce((a,m)=>a+m.content.length,0)>12000)H.shift();const ms=[{role:'system',content:plano?SIS:sis()},...H];
+ mem.historial.push({role:'user',content:texto,t:Date.now()});{const ch=act();if(ch.titulo==='Nuevo chat')ch.titulo=texto.slice(0,32)}
+ const H=mem.historial.slice(-20).map(({role,content})=>({role,content}));while(H.length>1&&H.reduce((a,m)=>a+m.content.length,0)>12000)H.shift();const ms=[{role:'system',content:plano?SIS:sis()},...H];
  const el=add('b live','Pensando…');
  for(let i=0;i<3;i++){
   try{
@@ -307,14 +307,14 @@ $('#imp').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)r
  const T=x=>typeof x==='number'?x:(Date.parse(String(x).replace(' ','T'))||0);
  const dt=Array.isArray(j.datos)?j.datos:Object.values(j.datos||{}).map(v=>typeof v==='string'?{texto:v,t:0}:{texto:v.texto,t:v.t||T(v.fecha)});
  const hs=(j.historial||[]).map(h=>({role:h.role,content:h.content,t:h.t||T(h.fecha)}));
- mem={datos:dt,historial:hs,recs:Array.isArray(j.recs)?j.recs:[],contactos:Array.isArray(j.contactos)?j.contactos:[],diario:Array.isArray(j.diario)?j.diario:[],listas:Object.assign({compras:[],tareas:[]},j.listas||{}),habitos:Array.isArray(j.habitos)?j.habitos:[],gastos:Array.isArray(j.gastos)?j.gastos:[],fechas:Array.isArray(j.fechas)?j.fechas:[],cola:[]};sane();sane2();if(j.cfg){const{key,pin,...r}=j.cfg;Object.assign(cfg,r)}save();tema();ap();fondo();msg('Memoria importada: '+dt.length+' notas, '+hs.length+' mensajes.')}catch(x){msg('El archivo no es una memoria válida.')}})};
+ mem={datos:dt,historial:hs,chats:Array.isArray(j.chats)?j.chats:[],ca:j.ca,recs:Array.isArray(j.recs)?j.recs:[],contactos:Array.isArray(j.contactos)?j.contactos:[],diario:Array.isArray(j.diario)?j.diario:[],listas:Object.assign({compras:[],tareas:[]},j.listas||{}),habitos:Array.isArray(j.habitos)?j.habitos:[],gastos:Array.isArray(j.gastos)?j.gastos:[],fechas:Array.isArray(j.fechas)?j.fechas:[],cola:[]};sane();sane2();migrar();if(j.cfg){const{key,pin,...r}=j.cfg;Object.assign(cfg,r)}save();tema();ap();fondo();recargar();msg('Memoria importada: '+dt.length+' notas, '+hs.length+' mensajes.')}catch(x){msg('El archivo no es una memoria válida.')}})};
 $('#bn').onclick=()=>confirmar('¿Seguro que quieres borrar todas las notas?',()=>{mem.datos=[];save();msg('Notas borradas.')});
-$('#bh').onclick=()=>confirmar('¿Seguro que quieres borrar todo el historial?',()=>{mem.historial=[];save();log.innerHTML='';msg('Historial borrado.')});
+$('#bh').onclick=()=>confirmar('¿Seguro que quieres borrar los mensajes de este chat?',()=>{mem.historial=[];save();log.innerHTML='';msg('Historial borrado.')});
 $('#cam').onchange=e=>{if(e.target.files[0])say('Foto capturada, Eddy. No se guarda en Jhonny.');e.target.value=''};
 
 const net=()=>{$('#st').classList.toggle('off',!navigator.onLine);$('#st span').textContent=!navigator.onLine?'Sin conexión':cfg.estudio?'Modo estudio':'En línea'};
 addEventListener('online',net);addEventListener('offline',net);net();
-mem.historial.filter(h=>h.t>=(cfg.corte||0)).slice(-6).forEach(h=>{const e=add(h.role==='user'?'u':'b',h.content);e.dataset.h=new Date(h.t).toLocaleTimeString('es',{hour:'numeric',minute:'2-digit',hour12:true})});
+mem.historial.slice(-6).forEach(h=>{const e=add(h.role==='user'?'u':'b',h.content);e.dataset.h=new Date(h.t).toLocaleTimeString('es',{hour:'numeric',minute:'2-digit',hour12:true})});
 say(mem.historial.length?'De vuelta, Eddy.':'Buenas, Eddy. Jhonny en línea.');
 if(!cfg.key&&!cfg.keyEnc)setTimeout(()=>{$('#hint').textContent='Para empezar, escribe tu clave de Groq. Se guarda solo en este teléfono.';$('#dlg').showModal()},2400);
 const DOTS='<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="3" r="2"/><circle cx="10" cy="10" r="2"/><circle cx="10" cy="17" r="2"/></svg>';
@@ -364,7 +364,7 @@ const PERS={profesor:'Tu personalidad es la de un profesor paciente y claro: exp
 const sis=()=>{let t=SIS;const q=PERS[cfg.pers];if(q)t=t.replace(/Tu personalidad es formal y seria[^.]*\./,q);return t+(cfg.estudio?ESTUDIO:'')};
 function mk(id,t,x){const e=document.createElement('section');e.className='scr';e.id='s-'+id;e.hidden=true;e.innerHTML='<div class="bar"><button class="bk">Atrás</button><h2>'+t+'</h2>'+(x||'')+'</div><input class="bq" hidden placeholder="Buscar" aria-label="Buscar"><div class="bd"></div>';document.body.append(e);e.querySelector('.bk').onclick=()=>history.back()}
 const mas=i=>'<button class="pl" id="'+i+'" aria-label="Agregar">+</button>';
-mk('diario','Diario',mas('dadd'));mk('listas','Listas',mas('ladd'));mk('habitos','Hábitos',mas('hadd'));mk('apariencia','Apariencia');mk('centro','Centro de mando');mk('notas','Notas',mas('nadd'));mk('gastos','Gastos',mas('gadd'));mk('fechas','Fechas importantes',mas('fadd'));mk('tiempo','Cronómetro y Pomodoro');mk('acerca','Acerca de');mk('recs','Recordatorios');mk('clima','Clima');
+mk('diario','Diario',mas('dadd'));mk('listas','Listas',mas('ladd'));mk('habitos','Hábitos',mas('hadd'));mk('apariencia','Apariencia');mk('centro','Centro de mando');mk('notas','Notas',mas('nadd'));mk('gastos','Gastos',mas('gadd'));mk('fechas','Fechas importantes',mas('fadd'));mk('tiempo','Cronómetro y Pomodoro');mk('acerca','Acerca de');mk('recs','Recordatorios');mk('chats','Chats','<button id="chsel" style="padding:6px 12px">Seleccionar</button>');mk('clima','Clima');
 let txFn,lt='compras';
 function pedirTexto(t,f,pre){$('#txt').textContent=t;$('#txi').value=pre||'';txFn=f;$('#tx').showModal()}
 $('#txc').onclick=()=>$('#tx').close();
@@ -404,7 +404,7 @@ function pApa(){const b=$('#s-apariencia .bd');b.innerHTML='<h3>Color</h3><div c
  opt($('#vs'),'Automática',!cfg.vozN,()=>{cfg.vozN='';save();decir('Buenas, Eddy.');pApa()});
  vz().forEach(v=>opt($('#vs'),v.name+' ('+v.lang+')',cfg.vozN===v.name,()=>{cfg.vozN=v.name;save();decir('Buenas, Eddy.');pApa()}));
  [['ninguno','Ninguno'],['lineas','Líneas'],['cuadros','Cuadros'],['triangulos','Triángulos'],['puntos','Puntos']].forEach(([k,n])=>opt($('#af'),n,(cfg.fondo||'ninguno')===k,()=>{cfg.fondo=k;save();fondo();pApa()}));opt($('#am'),'Quieto',!cfg.mov,()=>{cfg.mov=false;save();fondo();pApa()});opt($('#am'),'Con movimiento',!!cfg.mov,()=>{cfg.mov=true;save();fondo();pApa()});const c=$('#sl');slider(c,'Velocidad de la voz',0.5,1.5,0.1,'vel',1,x=>x.toFixed(1)+'x');slider(c,'Tono de la voz (a la izquierda, más grave)',0.4,1.4,0.05,'tono',0.75,x=>x.toFixed(2));slider(c,'Tamaño de letra',14,22,1,'letra',16,x=>x+' px');slider(c,'Intensidad del fondo',5,35,1,'bgi',16,x=>x+'%')}
-const P={recs:pRec,acerca:pAce,notas:pNot,gastos:pGas,fechas:pFec,tiempo:pTie,centro:pCen,clima:pCli,estudio:pEst,contactos:pCon,diario:pDia,listas:pLis,habitos:pHab,apariencia:pApa};
+const P={chats:()=>{chSel=false;chS.clear();pCha()},recs:pRec,acerca:pAce,notas:pNot,gastos:pGas,fechas:pFec,tiempo:pTie,centro:pCen,clima:pCli,estudio:pEst,contactos:pCon,diario:pDia,listas:pLis,habitos:pHab,apariencia:pApa};
 tema();
 
 const UN={};(function(){const A=(t,f,...ks)=>ks.forEach(k=>UN[k]=[t,f]);
@@ -460,13 +460,13 @@ async function datosClima0(){if(clC&&Date.now()-clC.t<6e5)return clC.d;
  clC={t:Date.now(),d};return d}
 function pCen(){const b=$('#s-centro .bd'),n=new Date(),T=mem.listas.tareas.filter(x=>!x.ok).slice(0,2),R=[...mem.recs].sort((a,c)=>a.due-c.due)[0],H=mem.habitos.slice(0,2);
  b.innerHTML='<div class="cd"><b style="font-size:24px;color:var(--cy)">'+n.toLocaleTimeString('es',{hour:'numeric',minute:'2-digit',hour12:true})+'</b><small>'+n.toLocaleDateString('es',{weekday:'long',day:'numeric',month:'long'})+'</small></div>'
- +'<div class="g2"><div class="cd"><svg class="ring" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" style="stroke:var(--ln)" stroke-width="6"/><circle id="bar" cx="32" cy="32" r="26" fill="none" style="stroke:var(--cy)" stroke-width="6" stroke-linecap="round" stroke-dasharray="0 163.4" transform="rotate(-90 32 32)"/><text id="bt" x="32" y="37" text-anchor="middle" font-size="14" style="fill:var(--tx)">--</text></svg><small style="text-align:center">Batería</small></div>'
+ +'<div class="g2"><div class="cd"><svg class="ring" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" style="stroke:var(--ln)" stroke-width="6"/><circle id="bar" cx="32" cy="32" r="26" fill="none" style="stroke:var(--cy)" stroke-width="6" stroke-linecap="round" stroke-dasharray="0 163.4" transform="rotate(-90 32 32)"/><text id="btx" x="32" y="37" text-anchor="middle" font-size="14" style="fill:var(--tx)">--</text></svg><small style="text-align:center">Batería</small></div>'
  +'<div class="cd tp" id="ccl"><small>Clima ›</small><b style="font-size:22px" id="ct1">--</b><small id="ct2">Cargando…</small></div></div>'
  +'<div class="cd tp" id="crc"><small>Recordatorios ›</small>'+(R?esc(dur(Math.max(1,Math.round((R.due-Date.now())/1000)))+': '+(R.texto||'Temporizador')):'Ninguno pendiente')+'</div>'
  +'<div class="cd tp" id="ctr"><small>Tareas pendientes ›</small>'+(T.length?T.map((x,i)=>'<div>'+(i+1)+'. '+esc(x.t)+'</div>').join(''):'Sin tareas pendientes')+'</div>'
  +'<div class="cd tp" id="chb"><small>Hábitos ›</small>'+(H.length?H.map(h=>{const r=racha(h);return '<div class="hr"><span>'+esc(h.n)+'</span><small>racha de '+r+(r===1?' día':' días')+'</small></div><div class="hb"><i style="width:'+Math.min(r,7)/7*100+'%"></i></div>'}).join(''):'Sin hábitos aún')+'</div>'+(Date.now()-(cfg.exp||cfg.ini||Date.now())>6048e5?'<div class="cd tp" id="cex"><small>Copia de seguridad ›</small>Hace más de una semana que no exportas tu memoria. Toca para exportarla.</div>':'')+(mem.cola.length?'<div class="cd"><small>Mensajes en espera</small>'+mem.cola.length+' se enviarán cuando vuelva la señal.</div>':'');
  $('#ccl').onclick=()=>abrir('clima');$('#ctr').onclick=()=>{lt='tareas';abrir('listas')};$('#chb').onclick=()=>abrir('habitos');$('#crc').onclick=()=>abrir('recs');if($('#cex'))$('#cex').onclick=()=>$('#ex').click();
- navigator.getBattery&&navigator.getBattery().then(x=>{const q=Math.round(x.level*100);$('#bar').setAttribute('stroke-dasharray',163.4*q/100+' 163.4');$('#bt').textContent=q+'%'}).catch(()=>{});
+ navigator.getBattery&&navigator.getBattery().then(x=>{const q=Math.round(x.level*100);$('#bar').setAttribute('stroke-dasharray',163.4*q/100+' 163.4');$('#btx').textContent=q+'%'}).catch(()=>{});
  datosClima().then(d=>{$('#ct1').textContent=Math.round(d.current.temperature_2m)+' °C';$('#ct2').textContent=cond(d.current.weather_code)+(d._viejo?' · sin conexión':'')}).catch(()=>{$('#ct2').textContent='Sin datos'})}
 async function pCli(){const b=$('#s-clima .bd');b.innerHTML='<div class="vac"><p>Cargando…</p></div>';
  try{const d=await datosClima(),k=d.current,y=d.daily;
@@ -572,21 +572,53 @@ function fondo(){const b=$('#bg'),f=cfg.fondo;b.className=(f&&f!=='ninguno'?'p-'
 fondo();
 $('#mn').innerHTML='<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
 $('#mn').setAttribute('aria-label','Abrir menú');
-function dr(o){if(o){document.body.classList.add('dro');history.pushState({d:1},'');drHist=true}else if(drHist)history.back();else document.body.classList.remove('dro')}
+function dr(o){if(o){armarDr();document.body.classList.add('dro');history.pushState({d:1},'');drHist=true}else if(drHist)history.back();else document.body.classList.remove('dro')}
 addEventListener('popstate',()=>{if(drHist){drHist=false;document.body.classList.remove('dro')}});
 $('#mn').onclick=e=>{e.stopPropagation();dr(!document.body.classList.contains('dro'))};
 $('#drs').onclick=()=>dr(false);
-const dn=$('#drp');dn.innerHTML='<b style="padding:16px 20px;color:var(--cy);letter-spacing:.3em;font-size:18px">JHONNY</b>';
+const dn=$('#drp');
 const dbtn=(t,f,x)=>{const b=document.createElement('button');b.textContent=t;if(x)b.style.color='var(--cy)';b.onclick=f;dn.append(b)};
-dbtn('+  Nuevo chat',()=>{dr(false);cfg.corte=Date.now();save();log.innerHTML='';say('Nuevo chat, Eddy. ¿En qué te ayudo?')},1);
-MENU.forEach(([t,f])=>dbtn(t,()=>{document.body.classList.remove('dro');f()}));
-dn.append(document.createElement('hr'));dbtn('Ajustes',()=>{dr(false);$('#cfg').click()});
+function armarDr(){dn.innerHTML='<b style="padding:16px 20px;color:var(--cy);letter-spacing:.3em;font-size:18px">JHONNY</b>';
+ dbtn('+  Nuevo chat',()=>{dr(false);nuevoChat()},1);
+ const R=[...mem.chats].reverse().filter(c=>c.msgs.length).slice(0,5);
+ if(R.length){const h=document.createElement('small');h.textContent='Chats recientes';h.style.cssText='padding:10px 20px 2px;color:var(--dim)';dn.append(h);
+  R.forEach(c=>dbtn((c.id===mem.ca?'● ':'')+c.titulo.slice(0,28),()=>{dr(false);mem.ca=c.id;save();recargar()}))}
+ dbtn('Mis chats (seleccionar)',()=>{document.body.classList.remove('dro');abrir('chats')},1);
+ dn.append(document.createElement('hr'));
+ MENU.forEach(([t,f])=>dbtn(t,()=>{document.body.classList.remove('dro');f()}));
+ dn.append(document.createElement('hr'));dbtn('Ajustes',()=>{dr(false);$('#cfg').click()})}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&drHist)dr(false)});
 let tx0=0,ty0=0;
 document.addEventListener('touchstart',e=>{const t=e.touches[0];tx0=t.clientX;ty0=t.clientY},{passive:true});
 document.addEventListener('touchend',e=>{const t=e.changedTouches[0],dx=t.clientX-tx0,dy=t.clientY-ty0;if(Math.abs(dx)<70||Math.abs(dx)<1.5*Math.abs(dy))return;
  const o=document.body.classList.contains('dro');
  if(o&&dx<0)dr(false);else if(!o&&dx>0&&!scr&&!e.target.closest('#chips,dialog,#lock,#intro')&&!document.querySelector('dialog[open]'))dr(true)},{passive:true});
+
+function nid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
+function act(){let c=mem.chats.find(x=>x.id===mem.ca);if(!c){c=mem.chats[mem.chats.length-1];if(!c){c={id:nid(),titulo:'Nuevo chat',t:Date.now(),msgs:[]};mem.chats.push(c)}mem.ca=c.id}return c}
+function migrar(){
+ mem.chats=ok(Array.isArray(mem.chats)?mem.chats:[],c=>typeof c.id==='string'&&Array.isArray(c.msgs)).map(c=>({id:c.id,titulo:String(c.titulo||'Chat').slice(0,60),t:+c.t||0,msgs:ok(c.msgs,x=>(x.role==='user'||x.role==='assistant')&&typeof x.content==='string')}));
+ const d=Object.getOwnPropertyDescriptor(mem,'historial');
+ if(d&&'value' in d){const h=ok(Array.isArray(d.value)?d.value:[],x=>(x.role==='user'||x.role==='assistant')&&typeof x.content==='string');delete mem.historial;
+  if(!mem.chats.length&&h.length){const c0=cfg.corte||0;[h.filter(x=>x.t<c0),h.filter(x=>x.t>=c0)].forEach(m=>{if(m.length)mem.chats.push({id:nid(),titulo:(m.find(x=>x.role==='user')||m[0]).content.slice(0,32),t:m[m.length-1].t||0,msgs:m})})}}
+ if(!Object.getOwnPropertyDescriptor(mem,'historial'))Object.defineProperty(mem,'historial',{get(){return act().msgs},set(v){act().msgs=v},enumerable:false,configurable:true});
+ act()}
+/*FINCHATS*/
+function recargar(){log.innerHTML='';const c=act();c.msgs.slice(-30).forEach(h=>{const e=add(h.role==='user'?'u':'b',h.content);e.dataset.h=new Date(h.t).toLocaleTimeString('es',{hour:'numeric',minute:'2-digit',hour12:true})});say(c.msgs.length?'Chat abierto: '+c.titulo:'Chat nuevo. ¿En qué te ayudo, Eddy?');down(true)}
+function nuevoChat(){if(act().msgs.length){const c={id:nid(),titulo:'Nuevo chat',t:Date.now(),msgs:[]};mem.chats.push(c);mem.ca=c.id;save()}recargar()}
+let chSel=false;const chS=new Set();
+function pCha(){const b=$('#s-chats .bd');b.innerHTML='';$('#chsel').textContent=chSel?'Cancelar':'Seleccionar';
+ if(chSel){const r=document.createElement('div');r.className='row';r.style.marginBottom='10px';
+  r.innerHTML='<button id="cht">'+(chS.size===mem.chats.length?'Quitar todos':'Seleccionar todos')+'</button><button id="chx">Exportar ('+chS.size+')</button><button id="chb" class="w" style="color:var(--er)">Borrar ('+chS.size+')</button>';b.append(r);
+  $('#cht').onclick=()=>{if(chS.size===mem.chats.length)chS.clear();else mem.chats.forEach(c=>chS.add(c.id));pCha()};
+  $('#chx').onclick=()=>{if(!chS.size)return;const t=mem.chats.filter(c=>chS.has(c.id)).map(c=>'=== '+c.titulo+' ===\n'+c.msgs.map(h=>(h.role==='user'?'Tú':'Jhonny')+': '+h.content).join('\n')).join('\n\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/plain'}));a.download='jhonny-chats.txt';a.click()};
+  $('#chb').onclick=()=>{if(!chS.size)return;confirmar('¿Seguro que quieres borrar '+chS.size+(chS.size===1?' chat?':' chats?')+' No se puede deshacer.',()=>{mem.chats=mem.chats.filter(c=>!chS.has(c.id));chS.clear();chSel=false;act();save();recargar();pCha()})}}
+ [...mem.chats].reverse().forEach(c=>{const r=document.createElement('div'),u=c.msgs.length?c.msgs[c.msgs.length-1].t:c.t;r.className='ct tp';
+  r.innerHTML=(chSel?'<input type="checkbox" class="ck" aria-label="Seleccionar chat">':'')+'<div class="i"><b></b><span></span></div>';
+  r.querySelector('b').textContent=c.titulo+(c.id===mem.ca?'  ✓':'');r.querySelector('span').textContent=c.msgs.length+' mensajes'+(u?' · '+fd(u):'');
+  if(chSel){const k=r.querySelector('.ck');k.checked=chS.has(c.id);k.onchange=()=>{k.checked?chS.add(c.id):chS.delete(c.id);pCha()};r.onclick=e=>{if(e.target!==k){k.checked=!k.checked;k.onchange()}}}
+  else r.onclick=()=>{mem.ca=c.id;save();recargar();history.back()};b.append(r)})}
+$('#chsel').onclick=()=>{chSel=!chSel;chS.clear();pCha()};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
 tick();
 </script></body></html>
