@@ -165,7 +165,6 @@ const $=s=>document.querySelector(s),S=localStorage,URL_='https://api.groq.com/o
 const ld=(k,d)=>{try{return JSON.parse(S[k])||d}catch(e){return d}};
 let cfg=ld('cfg',{key:'',model:'openai/gpt-oss-120b'}),mem=ld('mem',{datos:[],historial:[],recs:[]}),busy=false;
 function sane(){['datos','historial','recs','contactos','diario','habitos','gastos','fechas','cola'].forEach(k=>{if(!Array.isArray(mem[k]))mem[k]=[]});mem.recs=mem.recs.filter(r=>r&&Number.isFinite(r.due));if(!mem.listas||typeof mem.listas!=='object')mem.listas={};['compras','tareas'].forEach(k=>{if(!Array.isArray(mem.listas[k]))mem.listas[k]=[]})}
-sane();sane2();migrar();
 let svW=0;const save=()=>{try{S.cfg=JSON.stringify(cfg.keyEnc?{...cfg,key:''}:cfg);S.mem=JSON.stringify(mem)}catch(e){if(!svW){svW=1;alert('Jhonny no pudo guardar: el teléfono se quedó sin espacio. Exporta tu memoria y borra datos viejos.')}}};
 const SIS='Eres Jhonny, el asistente personal de Eddy, inspirado en JARVIS de Iron Man. Tu personalidad es formal y seria, sin bromas ni humor forzado, pero no excesivamente ceremoniosa: a veces puedes ser cercano. El nombre de tu usuario es Eddy, úsalo de vez en cuando. Responde siempre en español correcto y claro, sin groserías ni informalidad aunque Eddy las use. Reglas importantes: 1. No des consejos médicos, legales o financieros serios; recomienda hablar con un adulto o profesional. 2. En tareas escolares, no des solo la respuesta final: explica el procedimiento para que Eddy aprenda. 3. No opines sobre temas personales o conflictos de Eddy a menos que él te lo pida explícitamente. 4. No finjas ser una persona real ni tener sentimientos o cuerpo; eres una IA que ayuda a Eddy. Si no sabes algo o no tienes esa información (noticias actuales, datos recientes), dilo claramente en vez de inventar una respuesta. No puedes buscar en internet ni ver la pantalla del celular; solo conoces lo que te escriben y los datos que la app te entrega. IMPORTANTE: la pantalla es de texto plano, sin soporte para formato. No uses nunca asteriscos (** o *), numerales (#), guiones de lista (-), ni notación LaTeX como \\( \\) o \\[ \\]. Para matemáticas, usa símbolos normales: *, /, +, -, ^, paréntesis. Para listas, usa números seguidos de punto. No uses emojis ni emoticonos bajo ninguna circunstancia. Sé muy breve: responde en 1 a 3 frases como máximo, salvo que Eddy pida explícitamente más detalle o una explicación larga. Nunca des contexto, advertencias ni explicaciones que no se pidieron.';
 const ESTUDIO=' MODO ESTUDIO ACTIVO: Eddy está estudiando. Ignora el límite de 3 frases: puedes extenderte hasta 8 frases. Explica paso a paso con claridad y un ejemplo sencillo, sin dar solo la respuesta final. Termina con una pregunta de práctica corta para que Eddy responda. Cuando Eddy responda a tu pregunta, dile si es correcto y explica el error si lo hay.';
@@ -185,7 +184,6 @@ setInterval(tick,1000);document.addEventListener('visibilitychange',tick);
 
 const APPS={youtube:'com.google.android.youtube',spotify:'com.spotify.music',telegram:'org.telegram.messenger',tiktok:'com.zhiliaoapp.musically',maps:'com.google.android.apps.maps',mapas:'com.google.android.apps.maps',chrome:'com.android.chrome',gmail:'com.google.android.gm',whatsapp:'com.whatsapp',facebook:'com.facebook.lite','facebook lite':'com.facebook.lite',instagram:'com.instagram.android','lark player':'com.dywx.larkplayer',lark:'com.dywx.larkplayer'};
 const dur=s=>s>=3600?Math.round(s/360)/10+' h':s>=60?Math.ceil(s/60)+' min':s+' s';
-
 async function local(o){o=o.replace(/^[¿¡\s]+|[?!\s]+$/g,'');
  const n=norm(o).trim(),w=n.split(/\s+/).length;let m;const ot=o.trim(),cola=g=>ot.slice(ot.length-g.length);
  if(/^(recuerdame|avisame|recordatorio)/.test(n)){let due=null,mm;const rep=/todos los dias|cada dia|diario/.test(n)?'d':/todas las semanas|cada semana|semanal/.test(n)?'w':null,nn=n.replace(/de la manana/g,'');
@@ -230,7 +228,7 @@ async function local(o){o=o.replace(/^[¿¡\s]+|[?!\s]+$/g,'');
  if(/^(mis habitos|habitos|como van mis habitos)$/.test(n))return mem.habitos.length?mem.habitos.map(h=>h.n+': racha de '+racha(h)+(h.dias.includes(dia(new Date()))?' (hecho hoy)':'')).join('\n'):'No tienes hábitos, Eddy. Crea uno con: nuevo hábito leer';
  if(c=n.match(/^(?:cumpli|hice|complete|marca(?: el)? habito)\s+(?:con\s+)?(?:el\s+)?(.+)$/)){const h=mem.habitos.find(x=>norm(x.n).includes(c[1].trim())||c[1].includes(norm(x.n)));if(h){const hoy=dia(new Date());if(!h.dias.includes(hoy))h.dias.push(hoy);save();const r=racha(h);return 'Marcado: '+h.n+'. Racha: '+r+(r===1?' día.':' días.')}if(/^marca/.test(n))return 'No encontré ese hábito, Eddy.'}
  if(c=n.match(/^(?:agrega|anade|pon|apunta|suma)\s+(.+?)\s+(?:a|en)\s+(?:la\s+|mi\s+|mis\s+)?(?:lista\s+de\s+)?(compras|tareas)$/)){const it=ot.substr(n.indexOf(c[1],n.indexOf(' ')+1),c[1].length);mem.listas[c[2]].push({t:it,ok:false});save();return 'Agregado a '+c[2]+': '+it+'.'}
- if(c=n.match(/^(?:nueva tarea|agrega tarea|anade tarea|tarea)\s*:?\s+(.+)$/)){const it=cola(c[1]);mem.listas.tareas.push({t:it,ok:false});save();return 'Tarea agregada: '+it+'.'}
+  if(c=n.match(/^(?:nueva tarea|agrega tarea|anade tarea|tarea)\s*:?\s+(.+)$/)){const it=cola(c[1]);mem.listas.tareas.push({t:it,ok:false});save();return 'Tarea agregada: '+it+'.'}
  if(c=n.match(/^(?:mi lista de |lista de |que hay en mi lista de |mis |que )?(compras|tareas)(?: tengo| pendientes)?$/)){const L=mem.listas[c[1]];return L.length?(c[1]==='compras'?'Compras:\n':'Tareas:\n')+L.map((x,i)=>(i+1)+'. '+x.t+(x.ok?' (hecho)':'')).join('\n'):(c[1]==='compras'?'Tu lista de compras está vacía, Eddy.':'No tienes tareas pendientes, Eddy.')}
  if(c=n.match(/^(?:convierte|convertir|pasa|cuanto es)\s+(-?\d+(?:\.\d+)?)\s*([a-z]+(?:\s+(?:celsius|fahrenheit))?)\s+(?:a|en)\s+([a-z]+(?:\s+(?:celsius|fahrenheit))?)$/)){const r=conv(+c[1],c[2],c[3]);if(r!=null)return c[1]+' '+c[2]+' = '+r+' '+c[3]}
  if(c=n.match(/^cuant[oa]s?\s+([a-z]+)\s+(?:son|es|hay en)\s+(-?\d+(?:\.\d+)?)\s*([a-z]+)$/)){const r=conv(+c[2],c[3],c[1]);if(r!=null)return c[2]+' '+c[3]+' = '+r+' '+c[1]}
@@ -276,9 +274,9 @@ async function ia0(texto,plano){
   try{
    const r=await fetch(URL_,{method:'POST',headers:{Authorization:'Bearer '+cfg.key,'Content-Type':'application/json'},body:JSON.stringify({model:cfg.model,messages:ms,stream:true}),signal:ctrl.signal});
    if(r.status===503){await sleep(3000);continue}
-   const bad=r.status===401?'La clave de Groq no es válida. Corrígela en Ajustes.':r.status===429?'Se alcanzó el límite de uso de Groq. Espera un momento e intenta de nuevo.':!r.ok?'Groq respondió con el error '+r.status+'.':'';
+   const bad = r.status === 401 ? 'La clave de Groq no es válida. Corrígela en Ajustes.' : r.status === 429 ? 'Se alcanzó el límite de uso de Groq. Espera un momento e intenta de nuevo.' : !r.ok ? 'Groq respondió con el error ' + r.status + '.' : '';
    if(bad){mem.historial.pop();fail(el,bad);return}
-   const rd=r.body.getReader(),dc=new TextDecoder();let buf='',out='';
+      const rd=r.body.getReader(),dc=new TextDecoder();let buf='',out='';
    for(;;){const{done,value}=await rd.read();if(done)break;buf+=dc.decode(value,{stream:true});const ls=buf.split('\n');buf=ls.pop();
     for(const l of ls){if(!l.startsWith('data: '))continue;const d=l.slice(6).trim();if(d==='[DONE]')continue;try{out+=JSON.parse(d).choices[0].delta.content||'';el.textContent=out;down()}catch(e){}}}
    el.classList.remove('live');out=out.trim()||'Sin respuesta, Eddy. Intenta de nuevo.';el.textContent=out;
@@ -293,12 +291,12 @@ async function enviar(t){if(busy||!t)return;busy=true;add('u',t);
    if(out){const b=document.createElement('button');b.className='cp';b.textContent='Copiar traducción';b.onclick=async()=>{try{await navigator.clipboard.writeText(out);b.textContent='Copiado'}catch(e){b.textContent='No pude copiar'}};log.append(b);down()}}
   else{const r=await local(t);if(r!=null){say(r);hablar(r)}else await ia(t)}}catch(e){say('Ocurrió un error, Eddy.')}
  busy=false;porVoz=false;save()}
-$('#f').onsubmit=e=>{e.preventDefault();if(busy&&ctrl){parado=true;ctrl.abort();return}const t=$('#q').value.trim();$('#q').value='';enviar(t)};
+$('#f').onsubmit=e=>{e.preventDefault();if(busy&&ctrl){parado=true;ctrl.abort();return}const t=$('#q').value.trim();if(!t)return;$('#q').value='';enviar(t)};
 [['Hora','qué hora es'],['Fecha','qué fecha es'],['Batería','batería'],['Notas','qué recuerdas'],['Recordatorios','qué recordatorios tengo'],['Estudio','modo estudio'],['Contactos','mis contactos'],['Silencio','silencio'],['Cámara','abre cámara']].forEach(([a,c])=>{const b=document.createElement('button');b.textContent=a;b.type='button';b.onclick=()=>enviar(c);$('#chips').append(b)});
 
 $('#cfg').onclick=()=>{$('#k').value=cfg.key;$('#mo').value=cfg.model;msg('');$('#dlg').showModal()};
 $('#cl').onclick=()=>$('#dlg').close();
-$('#sv').onclick=()=>{cfg.key=$('#k').value.trim();cfg.model=$('#mo').value.trim()||'openai/gpt-oss-120b';save();msg('Guardado.');if(cfg.key)setTimeout(()=>$('#dlg').close(),600)};
+$('#sv').onclick=()=>{const nk=$('#k').value.trim();const guardar=()=>{cfg.key=nk;cfg.model=$('#mo').value.trim()||'openai/gpt-oss-120b';cfg.vision=$('#vm').value.trim();(cfg.pin&&pinMem?cifrarClave(pinMem):Promise.resolve()).then(()=>{save();msg('Guardado.');if(cfg.key)setTimeout(()=>$('#dlg').close(),600)})};if(cfg.pin&&!pinMem){ver(()=>guardar())}else guardar()};
 $('#nt').onclick=async()=>{if(!('Notification' in window))return msg('Este navegador no admite avisos.');const p=await Notification.requestPermission();msg(p==='granted'?'Avisos activados.':'Avisos bloqueados. Actívalos en los permisos del sitio.')};
 $('#te').onclick=async()=>msg(await notify('Prueba de aviso.')?'Aviso enviado.':'Primero activa los avisos.');
 $('#ex').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({...mem,cfg:(({key,pin,...r})=>r)(cfg)},null,2)],{type:'application/json'}));a.download='jhonny-memoria-'+new Date().toISOString().slice(0,10)+'.json';a.click();cfg.exp=Date.now();save();msg('Memoria exportada.')};
@@ -468,7 +466,7 @@ function pCen(){const b=$('#s-centro .bd'),n=new Date(),T=mem.listas.tareas.filt
  $('#ccl').onclick=()=>abrir('clima');$('#ctr').onclick=()=>{lt='tareas';abrir('listas')};$('#chb').onclick=()=>abrir('habitos');$('#crc').onclick=()=>abrir('recs');if($('#cex'))$('#cex').onclick=()=>$('#ex').click();
  navigator.getBattery&&navigator.getBattery().then(x=>{const q=Math.round(x.level*100);$('#bar').setAttribute('stroke-dasharray',163.4*q/100+' 163.4');$('#btx').textContent=q+'%'}).catch(()=>{});
  datosClima().then(d=>{$('#ct1').textContent=Math.round(d.current.temperature_2m)+' °C';$('#ct2').textContent=cond(d.current.weather_code)+(d._viejo?' · sin conexión':'')}).catch(()=>{$('#ct2').textContent='Sin datos'})}
-async function pCli(){const b=$('#s-clima .bd');b.innerHTML='<div class="vac"><p>Cargando…</p></div>';
+ async function pCli(){const b=$('#s-clima .bd');b.innerHTML='<div class="vac"><p>Cargando…</p></div>';
  try{const d=await datosClima(),k=d.current,y=d.daily;
   b.innerHTML='<div style="text-align:center;margin-bottom:12px"><small style="color:var(--dim)">'+(d._viejo?'Sin conexión · actualizado '+fd(d._t):'Tu ubicación · actualizado '+fd(d._t||Date.now()))+'</small><div style="font-size:26px;color:var(--cy)">'+Math.round(k.temperature_2m)+' °C · '+cond(k.weather_code)+'</div><small style="color:var(--dim)">Sensación '+Math.round(k.apparent_temperature)+' °C</small></div><div id="dl"></div><button id="clr" style="margin-top:8px;width:100%">Actualizar</button>';
   y.time.forEach((f,i)=>{const r=document.createElement('div');r.className='cd dl';if(!i)r.style.borderColor='var(--cy)';
@@ -521,7 +519,6 @@ function pTic(){if(!$('#cv'))return;$('#cv').textContent=mmss(cr+(crT?Date.now()
 function pomo(){if(pm&&Date.now()>=pm.fin){const f=pm.f==='Enfoque';pm={f:f?'Descanso':'Enfoque',fin:Date.now()+(f?3e5:15e5)};const t=f?'Hora de descansar 5 minutos.':'A enfocarse otros 25 minutos.';say(t);notify(t);navigator.vibrate&&navigator.vibrate([300,150,300]);beep()}}
 setInterval(()=>{pomo();if(scr==='tiempo')pTic()},500);
 
-
 function pAce(){$('#s-acerca .bd').innerHTML='<div class="cd"><b style="color:var(--cy)">Jhonny 2.0</b><small>Asistente personal de Eddy</small></div><div class="cd"><small>Tus datos</small>Notas, contactos, diario, listas, hábitos, gastos y fechas se guardan solo en este teléfono.</div><div class="cd"><small>Lo que sale del teléfono</small>Tus mensajes del chat se envían a Groq para generar la respuesta. El clima usa tu ubicación y el servicio Open-Meteo. La voz y el micrófono usan los servicios de Chrome.</div><div class="cd"><small>Créditos</small>IA y fotos: Groq. Clima: Open-Meteo.</div><div class="cd"><small>Seguridad</small>Tu clave de Groq se guarda en este navegador. Si pones un PIN, se guarda cifrada con él. El PIN no cifra tus notas ni tu historial, solo bloquea la pantalla. Un PIN corto se puede adivinar con acceso al teléfono, así que usa uno largo y, si dudas, cambia tu clave en Groq. Puedes borrar todo en Ajustes.</div>'}
 $('#pml').onclick=()=>{location.href='tel:'+mem.contactos[sel].num};
 $('#pmw').onclick=()=>{location.href='https://wa.me/'+mem.contactos[sel].num.replace(/\D/g,'')};
@@ -534,14 +531,14 @@ let fq={},ctrl=null,parado=false,edIdx=-1,pinMem=null,intentos=0,bloq=0;
 function bq(id,n,fn){const q=$('#s-'+id+' .bq');if(!q)return;q.hidden=n<=8;q.oninput=()=>{fq[id]=norm(q.value);fn()}}
 function abrirExt(u){location.href=u;setTimeout(()=>{if(!document.hidden)say('No pude abrir eso, Eddy. Revisa que la aplicación esté instalada.')},1500)}
 function indic(on){$('#go').textContent=on?'Detener':'Enviar';if(on)$('#st span').textContent='Pensando…';else net()}
-async function ia(t,p){ctrl=new AbortController();parado=false;const tm=setTimeout(()=>ctrl.abort(),9e4);indic(1);try{return await ia0(t,p)}finally{clearTimeout(tm);ctrl=null;indic(0)}}
+async function ia(t,p){ctrl=new AbortController();parado=false;const tm=setTimeout(()=>ctrl.abort(),9e4);indic(1);try{return await ia0(t,p)}finally{clearTimeout(tm);setTimeout(()=>{ctrl=null;indic(0)},0)}}
 function ok(a,f){return a.filter(x=>x&&typeof x==='object'&&f(x))}
 function sane2(){mem.datos=ok(mem.datos,x=>typeof x.texto==='string');mem.historial=ok(mem.historial,x=>(x.role==='user'||x.role==='assistant')&&typeof x.content==='string');mem.contactos=ok(mem.contactos,x=>typeof x.nombre==='string'&&typeof x.num==='string');mem.diario=ok(mem.diario,x=>typeof x.x==='string');mem.habitos=ok(mem.habitos,x=>typeof x.n==='string'&&Array.isArray(x.dias));mem.gastos=ok(mem.gastos,x=>Number.isFinite(x.m));mem.fechas=ok(mem.fechas,x=>typeof x.n==='string'&&x.d>0&&x.m>0);['compras','tareas'].forEach(k=>{mem.listas[k]=ok(mem.listas[k],x=>typeof x.t==='string')})}
 function reducir(f){return new Promise((res,no)=>{const i=new Image(),u=URL.createObjectURL(f);i.onload=()=>{const k=Math.min(1,1024/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',.8))};i.onerror=no;i.src=u})}
 $('#cam').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
  if(!cfg.key)return say('Falta la clave de Groq. Escríbela en Ajustes.');
  if(!navigator.onLine)return say('Sin conexión, Eddy. Analizar fotos necesita internet.');
- pedirTexto('¿Qué quieres saber de la foto? (ejemplo: describe lo que ves)',async q=>{if(busy)return;busy=true;add('u','Foto: '+q);const el=add('b live','Analizando la foto…');indic(1);
+ pedirTexto('¿Qué quieres saber de la foto? (ejemplo: describe lo que ves)',async q=>{if(busy||!q)return;busy=true;add('u','Foto: '+q);const el=add('b live','Analizando la foto…');indic(1);
   try{const img=await reducir(f);ctrl=new AbortController();const tm=setTimeout(()=>ctrl.abort(),9e4);
    const r=await fetch(URL_,{method:'POST',headers:{Authorization:'Bearer '+cfg.key,'Content-Type':'application/json'},body:JSON.stringify({model:cfg.vision||'qwen/qwen3.6-27b',messages:[{role:'user',content:[{type:'text',text:q+'. Responde en español, de forma breve.'},{type:'image_url',image_url:{url:img}}]}]}),signal:ctrl.signal});clearTimeout(tm);
    if(!r.ok)fail(el,r.status===401?'La clave de Groq no es válida.':r.status===429?'Se alcanzó el límite de uso de Groq. Espera un momento.':'Groq no pudo analizar la foto (error '+r.status+'). Revisa el nombre del modelo para fotos en Ajustes.');
@@ -559,14 +556,13 @@ const b64=u=>btoa(String.fromCharCode(...u)),ub=t=>Uint8Array.from(atob(t),c=>c.
 async function kdf(pin,salt){const m=await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:150000,hash:'SHA-256'},m,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
 async function cifrarClave(pin){if(!cfg.key){delete cfg.keyEnc;save();return}const sa=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12)),k=await kdf(pin,sa),c=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,new TextEncoder().encode(cfg.key)));cfg.keyEnc={s:b64(sa),i:b64(iv),c:b64(c)};save()}
 async function descifrarClave(pin){if(!cfg.keyEnc)return;try{const k=await kdf(pin,ub(cfg.keyEnc.s));cfg.key=new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:ub(cfg.keyEnc.i)},k,ub(cfg.keyEnc.c)))}catch(e){}}
-$('#sv').onclick=()=>{cfg.key=$('#k').value.trim();cfg.model=$('#mo').value.trim()||'openai/gpt-oss-120b';cfg.vision=$('#vm').value.trim();(cfg.pin&&pinMem?cifrarClave(pinMem):Promise.resolve()).then(()=>{save();msg('Guardado.');if(cfg.key)setTimeout(()=>$('#dlg').close(),600)})};
+$('#sv').onclick=()=>{const nk=$('#k').value.trim();const guardar=()=>{cfg.key=nk;cfg.model=$('#mo').value.trim()||'openai/gpt-oss-120b';cfg.vision=$('#vm').value.trim();(cfg.pin&&pinMem?cifrarClave(pinMem):Promise.resolve()).then(()=>{save();msg('Guardado.');if(cfg.key)setTimeout(()=>$('#dlg').close(),600)})};if(cfg.pin&&!pinMem){ver(()=>guardar())}else guardar()};
 $('#cfg').onclick=()=>{$('#k').value=cfg.key||'';$('#mo').value=cfg.model;$('#vm').value=cfg.vision||'';msg('');$('#dlg').showModal()};
 $('#pin').onclick=()=>ver(()=>pedirPin('Nuevo PIN (4 a 8 números)',a=>pedirPin('Repite el PIN',async b=>{if(a!==b)return msg('Los PIN no coinciden.');cfg.pin=await hash(a);pinMem=a;await cifrarClave(a);save();msg('PIN guardado. Tu clave de Groq ahora se guarda cifrada.')})));
 $('#pinq').onclick=()=>{if(!cfg.pin)return msg('No tienes PIN.');ver(()=>{delete cfg.pin;delete cfg.keyEnc;pinMem=null;save();msg('PIN quitado.')})};
 $('#lf').onsubmit=async e=>{e.preventDefault();if(Date.now()<bloq)return $('#lke').textContent='Demasiados intentos. Espera 30 segundos.';const v=$('#lk').value;if((await hash(v))===cfg.pin){intentos=0;pinMem=v;await descifrarClave(v);$('#lock').hidden=true}else{$('#lke').textContent='PIN incorrecto.';$('#lk').value='';if(++intentos>=5){bloq=Date.now()+3e4;intentos=0}}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape')cerrarMenu()});
 ['cf','pd','tx','ad','ma','dlg'].forEach(i=>{const d=$('#'+i),h=d.querySelector('h2');if(h){h.id=h.id||'h_'+i;d.setAttribute('aria-labelledby',h.id)}});
-
 let drHist=false;
 function fondo(){const b=$('#bg'),f=cfg.fondo;b.className=(f&&f!=='ninguno'?'p-'+f:'')+(cfg.mov?' mov':'');document.documentElement.style.setProperty('--bga',(cfg.bgi||16)+'%')}
 fondo();
@@ -603,7 +599,6 @@ function migrar(){
   if(!mem.chats.length&&h.length){const c0=cfg.corte||0;[h.filter(x=>x.t<c0),h.filter(x=>x.t>=c0)].forEach(m=>{if(m.length)mem.chats.push({id:nid(),titulo:(m.find(x=>x.role==='user')||m[0]).content.slice(0,32),t:m[m.length-1].t||0,msgs:m})})}}
  if(!Object.getOwnPropertyDescriptor(mem,'historial'))Object.defineProperty(mem,'historial',{get(){return act().msgs},set(v){act().msgs=v},enumerable:false,configurable:true});
  act()}
-/*FINCHATS*/
 function recargar(){log.innerHTML='';const c=act();c.msgs.slice(-30).forEach(h=>{const e=add(h.role==='user'?'u':'b',h.content);e.dataset.h=new Date(h.t).toLocaleTimeString('es',{hour:'numeric',minute:'2-digit',hour12:true})});say(c.msgs.length?'Chat abierto: '+c.titulo:'Chat nuevo. ¿En qué te ayudo, Eddy?');down(true)}
 function nuevoChat(){if(act().msgs.length){const c={id:nid(),titulo:'Nuevo chat',t:Date.now(),msgs:[]};mem.chats.push(c);mem.ca=c.id;save()}recargar()}
 let chSel=false;const chS=new Set();
@@ -620,5 +615,5 @@ function pCha(){const b=$('#s-chats .bd');b.innerHTML='';$('#chsel').textContent
   else r.onclick=()=>{mem.ca=c.id;save();recargar();history.back()};b.append(r)})}
 $('#chsel').onclick=()=>{chSel=!chSel;chS.clear();pCha()};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
-tick();
+sane();sane2();migrar();tick();
 </script></body></html>
