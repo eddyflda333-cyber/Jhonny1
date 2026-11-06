@@ -165,6 +165,7 @@ const $=s=>document.querySelector(s),S=localStorage,URL_='https://api.groq.com/o
 const ld=(k,d)=>{try{return JSON.parse(S[k])||d}catch(e){return d}};
 let cfg=ld('cfg',{key:'',model:'openai/gpt-oss-120b'}),mem=ld('mem',{datos:[],historial:[],recs:[]}),busy=false;
 function sane(){['datos','historial','recs','contactos','diario','habitos','gastos','fechas','cola'].forEach(k=>{if(!Array.isArray(mem[k]))mem[k]=[]});mem.recs=mem.recs.filter(r=>r&&Number.isFinite(r.due));if(!mem.listas||typeof mem.listas!=='object')mem.listas={};['compras','tareas'].forEach(k=>{if(!Array.isArray(mem.listas[k]))mem.listas[k]=[]})}
+sane();sane2();migrar();
 let svW=0;const save=()=>{try{S.cfg=JSON.stringify(cfg.keyEnc?{...cfg,key:''}:cfg);S.mem=JSON.stringify(mem)}catch(e){if(!svW){svW=1;alert('Jhonny no pudo guardar: el teléfono se quedó sin espacio. Exporta tu memoria y borra datos viejos.')}}};
 const SIS='Eres Jhonny, el asistente personal de Eddy, inspirado en JARVIS de Iron Man. Tu personalidad es formal y seria, sin bromas ni humor forzado, pero no excesivamente ceremoniosa: a veces puedes ser cercano. El nombre de tu usuario es Eddy, úsalo de vez en cuando. Responde siempre en español correcto y claro, sin groserías ni informalidad aunque Eddy las use. Reglas importantes: 1. No des consejos médicos, legales o financieros serios; recomienda hablar con un adulto o profesional. 2. En tareas escolares, no des solo la respuesta final: explica el procedimiento para que Eddy aprenda. 3. No opines sobre temas personales o conflictos de Eddy a menos que él te lo pida explícitamente. 4. No finjas ser una persona real ni tener sentimientos o cuerpo; eres una IA que ayuda a Eddy. Si no sabes algo o no tienes esa información (noticias actuales, datos recientes), dilo claramente en vez de inventar una respuesta. No puedes buscar en internet ni ver la pantalla del celular; solo conoces lo que te escriben y los datos que la app te entrega. IMPORTANTE: la pantalla es de texto plano, sin soporte para formato. No uses nunca asteriscos (** o *), numerales (#), guiones de lista (-), ni notación LaTeX como \\( \\) o \\[ \\]. Para matemáticas, usa símbolos normales: *, /, +, -, ^, paréntesis. Para listas, usa números seguidos de punto. No uses emojis ni emoticonos bajo ninguna circunstancia. Sé muy breve: responde en 1 a 3 frases como máximo, salvo que Eddy pida explícitamente más detalle o una explicación larga. Nunca des contexto, advertencias ni explicaciones que no se pidieron.';
 const ESTUDIO=' MODO ESTUDIO ACTIVO: Eddy está estudiando. Ignora el límite de 3 frases: puedes extenderte hasta 8 frases. Explica paso a paso con claridad y un ejemplo sencillo, sin dar solo la respuesta final. Termina con una pregunta de práctica corta para que Eddy responda. Cuando Eddy responda a tu pregunta, dile si es correcto y explica el error si lo hay.';
@@ -175,13 +176,16 @@ const log=$('#log'),down=f=>{if(f||log.scrollHeight-log.scrollTop-log.clientHeig
 function add(c,t){const e=document.createElement('div');e.className='m '+c;e.dataset.h=new Date().toLocaleTimeString('es',{hour:'numeric',minute:'2-digit',hour12:true});e.textContent=t;log.append(e);down(c==='u');return e}
 const say=t=>add('b',t);
 function msg(t){$('#ok').textContent=t}
+
 async function notify(t){try{if(Notification.permission==='granted'){const r=await navigator.serviceWorker.ready;await r.showNotification('Jhonny',{body:t,icon:'icon-192.png',vibrate:[200,100,200]});return true}}catch(e){}return false}
 let AC;function beep(){try{AC=AC||new AudioContext();const o=AC.createOscillator();o.frequency.value=880;o.connect(AC.destination);o.start();o.stop(AC.currentTime+.4)}catch(e){}}
 function tick(){const n=Date.now(),v=mem.recs.filter(r=>r.due<=n);if(!v.length)return;mem.recs=mem.recs.filter(r=>r.due>n);v.forEach(r=>{if(r.rep){let d=r.due;while(d<=n)d+=r.rep==='d'?864e5:6048e5;mem.recs.push({...r,due:d})}});save();
  v.forEach(r=>{const t=r.texto||'Temporizador finalizado';say('Recordatorio: '+t);notify(t);navigator.vibrate&&navigator.vibrate([300,150,300]);beep()})}
 setInterval(tick,1000);document.addEventListener('visibilitychange',tick);
+
 const APPS={youtube:'com.google.android.youtube',spotify:'com.spotify.music',telegram:'org.telegram.messenger',tiktok:'com.zhiliaoapp.musically',maps:'com.google.android.apps.maps',mapas:'com.google.android.apps.maps',chrome:'com.android.chrome',gmail:'com.google.android.gm',whatsapp:'com.whatsapp',facebook:'com.facebook.lite','facebook lite':'com.facebook.lite',instagram:'com.instagram.android','lark player':'com.dywx.larkplayer',lark:'com.dywx.larkplayer'};
 const dur=s=>s>=3600?Math.round(s/360)/10+' h':s>=60?Math.ceil(s/60)+' min':s+' s';
+
 async function local(o){o=o.replace(/^[¿¡\s]+|[?!\s]+$/g,'');
  const n=norm(o).trim(),w=n.split(/\s+/).length;let m;const ot=o.trim(),cola=g=>ot.slice(ot.length-g.length);
  if(/^(recuerdame|avisame|recordatorio)/.test(n)){let due=null,mm;const rep=/todos los dias|cada dia|diario/.test(n)?'d':/todas las semanas|cada semana|semanal/.test(n)?'w':null,nn=n.replace(/de la manana/g,'');
@@ -260,6 +264,7 @@ async function local(o){o=o.replace(/^[¿¡\s]+|[?!\s]+$/g,'');
  if(/^abre (la )?camara/.test(n)){$('#cam').click();return 'Abriendo la cámara.'}
  if(n.startsWith('abre ')){const a=n.slice(5).trim(),p=APPS[a];if(!p)return w<=3?'No tengo registrada esa aplicación, Eddy.':null;confirmar('¿Abrir '+a+'?',()=>abrirExt('intent://#Intent;package='+p+';end'),'Abrir','Abrir aplicación');return 'Esperando tu confirmación.'}
  return null}
+
 function fail(e,t){e.setAttribute('role','alert');e.classList.remove('live');e.classList.add('er');e.textContent=t}
 async function ia0(texto,plano){
  if(!cfg.key){say('Falta la clave de Groq. Escríbela en Ajustes.');$('#dlg').showModal();return}
@@ -271,7 +276,7 @@ async function ia0(texto,plano){
   try{
    const r=await fetch(URL_,{method:'POST',headers:{Authorization:'Bearer '+cfg.key,'Content-Type':'application/json'},body:JSON.stringify({model:cfg.model,messages:ms,stream:true}),signal:ctrl.signal});
    if(r.status===503){await sleep(3000);continue}
-   const bad = r.status === 401 ? 'La clave de Groq no es válida. Corrígela en Ajustes.' : r.status === 429 ? 'Se alcanzó el límite de uso de Groq. Espera un momento e intenta de nuevo.' : !r.ok ? 'Groq respondió con el error ' + r.status + '.' : '';
+   const bad=r.status===401?'La clave de Groq no es válida. Corrígela en Ajustes.':r.status===429?'Se alcanzó el límite de uso de Groq. Espera un momento e intenta de nuevo.':!r.ok?'Groq respondió con el error '+r.status+'.':'';
    if(bad){mem.historial.pop();fail(el,bad);return}
    const rd=r.body.getReader(),dc=new TextDecoder();let buf='',out='';
    for(;;){const{done,value}=await rd.read();if(done)break;buf+=dc.decode(value,{stream:true});const ls=buf.split('\n');buf=ls.pop();
@@ -281,17 +286,19 @@ async function ia0(texto,plano){
   }catch(e){if(parado){el.classList.remove('live');const o=(el.textContent==='Pensando…'?'':el.textContent).trim()||'Detenido.';el.textContent=o;mem.historial.push({role:'assistant',content:o,t:Date.now()});save();return o}await sleep(1500)}
  }
  mem.historial.pop();mem.cola.push(texto);save();fail(el,'No pude conectar con Groq. Guardé tu mensaje y lo reintento cuando vuelva la señal.')}
+
 async function enviar(t){if(busy||!t)return;busy=true;add('u',t);
  try{const tr=t.match(/^traduce(?:me)?\s+(?:al|a|en)\s+([^\s:]+)\s*:\s*([\s\S]+)$/i);
   if(tr){const out=await ia('Traduce al '+tr[1]+' el siguiente texto. Responde solo con la traducción, sin comentarios: '+tr[2],true);
    if(out){const b=document.createElement('button');b.className='cp';b.textContent='Copiar traducción';b.onclick=async()=>{try{await navigator.clipboard.writeText(out);b.textContent='Copiado'}catch(e){b.textContent='No pude copiar'}};log.append(b);down()}}
   else{const r=await local(t);if(r!=null){say(r);hablar(r)}else await ia(t)}}catch(e){say('Ocurrió un error, Eddy.')}
  busy=false;porVoz=false;save()}
-$('#f').onsubmit=e=>{e.preventDefault();if(busy&&ctrl){parado=true;ctrl.abort();return}const t=$('#q').value.trim();if(!t)return;$('#q').value='';enviar(t)};
+$('#f').onsubmit=e=>{e.preventDefault();if(busy&&ctrl){parado=true;ctrl.abort();return}const t=$('#q').value.trim();$('#q').value='';enviar(t)};
 [['Hora','qué hora es'],['Fecha','qué fecha es'],['Batería','batería'],['Notas','qué recuerdas'],['Recordatorios','qué recordatorios tengo'],['Estudio','modo estudio'],['Contactos','mis contactos'],['Silencio','silencio'],['Cámara','abre cámara']].forEach(([a,c])=>{const b=document.createElement('button');b.textContent=a;b.type='button';b.onclick=()=>enviar(c);$('#chips').append(b)});
+
 $('#cfg').onclick=()=>{$('#k').value=cfg.key;$('#mo').value=cfg.model;msg('');$('#dlg').showModal()};
 $('#cl').onclick=()=>$('#dlg').close();
-$('#sv').onclick=()=>{const nk=$('#k').value.trim();const guardar=()=>{cfg.key=nk;cfg.model=$('#mo').value.trim()||'openai/gpt-oss-120b';cfg.vision=$('#vm').value.trim();(cfg.pin&&pinMem?cifrarClave(pinMem):Promise.resolve()).then(()=>{save();msg('Guardado.');if(cfg.key)setTimeout(()=>$('#dlg').close(),600)})};if(cfg.pin&&!pinMem){ver(()=>guardar())}else guardar()};
+$('#sv').onclick=()=>{cfg.key=$('#k').value.trim();cfg.model=$('#mo').value.trim()||'openai/gpt-oss-120b';save();msg('Guardado.');if(cfg.key)setTimeout(()=>$('#dlg').close(),600)};
 $('#nt').onclick=async()=>{if(!('Notification' in window))return msg('Este navegador no admite avisos.');const p=await Notification.requestPermission();msg(p==='granted'?'Avisos activados.':'Avisos bloqueados. Actívalos en los permisos del sitio.')};
 $('#te').onclick=async()=>msg(await notify('Prueba de aviso.')?'Aviso enviado.':'Primero activa los avisos.');
 $('#ex').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({...mem,cfg:(({key,pin,...r})=>r)(cfg)},null,2)],{type:'application/json'}));a.download='jhonny-memoria-'+new Date().toISOString().slice(0,10)+'.json';a.click();cfg.exp=Date.now();save();msg('Memoria exportada.')};
@@ -304,6 +311,7 @@ $('#imp').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)r
 $('#bn').onclick=()=>confirmar('¿Seguro que quieres borrar todas las notas?',()=>{mem.datos=[];save();msg('Notas borradas.')});
 $('#bh').onclick=()=>confirmar('¿Seguro que quieres borrar los mensajes de este chat?',()=>{mem.historial=[];save();log.innerHTML='';msg('Historial borrado.')});
 $('#cam').onchange=e=>{if(e.target.files[0])say('Foto capturada, Eddy. No se guarda en Jhonny.');e.target.value=''};
+
 const net=()=>{$('#st').classList.toggle('off',!navigator.onLine);$('#st span').textContent=!navigator.onLine?'Sin conexión':cfg.estudio?'Modo estudio':'En línea'};
 addEventListener('online',net);addEventListener('offline',net);net();
 mem.historial.slice(-6).forEach(h=>{const e=add(h.role==='user'?'u':'b',h.content);e.dataset.h=new Date(h.t).toLocaleTimeString('es',{hour:'numeric',minute:'2-digit',hour12:true})});
@@ -322,10 +330,12 @@ const pr=document.createElement('button');pr.textContent='Próximamente';pr.disa
 function cerrarMenu(){mn.hidden=true;$('#pm').hidden=true}
 $('#mn').onclick=e=>{e.stopPropagation();const o=!mn.hidden;cerrarMenu();if(o)return;const r=e.currentTarget.getBoundingClientRect();mn.style.top=r.bottom+6+'px';mn.style.left=Math.max(8,r.left)+'px';mn.hidden=false};
 document.addEventListener('click',cerrarMenu);
+
 function pEst(){const e=!!cfg.estudio;$('#ea').textContent=e?'Estudio':'Normal';$('#se0').setAttribute('aria-pressed',!e);$('#se1').setAttribute('aria-pressed',e);
  $('#ed').textContent=e?'Jhonny explica paso a paso, se extiende más y te hace preguntas de práctica.':'Jhonny responde de forma breve, en una a tres frases.'}
 const setE=v=>{cfg.estudio=v;save();net();pEst()};
 $('#se0').onclick=()=>setE(false);$('#se1').onclick=()=>setE(true);
+
 function pCon(){const L=$('#clist'),c=mem.contactos;bq('contactos',c.length,pCon);L.innerHTML='';$('#cadd').hidden=!c.length;
  if(!c.length){L.innerHTML='<div class="vac"><p>Aún no tienes contactos</p><button id="c1">Agregar primer contacto</button></div>';$('#c1').onclick=nuevo;return}
  c.forEach((x,i)=>{if(!norm(x.nombre+' '+x.num).includes(fq.contactos||''))return;const r=document.createElement('div');r.className='ct';
@@ -347,6 +357,7 @@ $('#acy').onclick=()=>{const n=$('#an').value.trim().replace(/^(de|mi|la|el)\s+/
  if(!n)return $('#aer').textContent='Escribe un nombre.';
  if(!/^\+?\d{7,}$/.test(t))return $('#aer').textContent='Escribe un número válido, de 7 dígitos o más.';
  if(edIdx>=0){mem.contactos[edIdx]={nombre:n,num:t};edIdx=-1}else{mem.contactos=mem.contactos.filter(x=>norm(x.nombre).replace(/^(de|mi|la|el)\s+/,'')!==norm(n));mem.contactos.push({nombre:n,num:t})}save();$('#ad').close();pCon()};
+
 const TEMAS={cian:{cy:'#4de3ff',bl:'#2a8cff',ln:'#12384f',g:'#0b2a44',ub:'#0d2a44'},morado:{cy:'#c792ff',bl:'#8b5cf6',ln:'#3b2a5e',g:'#1d1238',ub:'#241546'},verde:{cy:'#5dffa8',bl:'#16a34a',ln:'#144a2e',g:'#0b3320',ub:'#0f3d27'},rojo:{cy:'#ff6b6b',bl:'#e11d48',ln:'#5a1a24',g:'#3a0e16',ub:'#4a121c'},dorado:{cy:'#ffd45e',bl:'#d97706',ln:'#5a4210',g:'#3a2a08',ub:'#4a3509'}};
 function tema(){const t=TEMAS[cfg.color]||TEMAS.cian;for(const k in t)document.documentElement.style.setProperty('--'+k,t[k])}
 const PERS={profesor:'Tu personalidad es la de un profesor paciente y claro: explicas con ejemplos sencillos, animas a Eddy a razonar por sí mismo y compruebas que haya entendido.',directo:'Tu personalidad es directa y concisa: respondes en una sola frase siempre que sea posible, sin rodeos ni cortesías innecesarias.'};
@@ -395,6 +406,7 @@ function pApa(){const b=$('#s-apariencia .bd');b.innerHTML='<h3>Color</h3><div c
  [['ninguno','Ninguno'],['lineas','Líneas'],['cuadros','Cuadros'],['triangulos','Triángulos'],['puntos','Puntos']].forEach(([k,n])=>opt($('#af'),n,(cfg.fondo||'ninguno')===k,()=>{cfg.fondo=k;save();fondo();pApa()}));opt($('#am'),'Quieto',!cfg.mov,()=>{cfg.mov=false;save();fondo();pApa()});opt($('#am'),'Con movimiento',!!cfg.mov,()=>{cfg.mov=true;save();fondo();pApa()});const c=$('#sl');slider(c,'Velocidad de la voz',0.5,1.5,0.1,'vel',1,x=>x.toFixed(1)+'x');slider(c,'Tono de la voz (a la izquierda, más grave)',0.4,1.4,0.05,'tono',0.75,x=>x.toFixed(2));slider(c,'Tamaño de letra',14,22,1,'letra',16,x=>x+' px');slider(c,'Intensidad del fondo',5,35,1,'bgi',16,x=>x+'%')}
 const P={chats:()=>{chSel=false;chS.clear();pCha()},recs:pRec,acerca:pAce,notas:pNot,gastos:pGas,fechas:pFec,tiempo:pTie,centro:pCen,clima:pCli,estudio:pEst,contactos:pCon,diario:pDia,listas:pLis,habitos:pHab,apariencia:pApa};
 tema();
+
 const UN={};(function(){const A=(t,f,...ks)=>ks.forEach(k=>UN[k]=[t,f]);
  A('l',1,'metro','m');A('l',1000,'kilometro','km');A('l',.01,'centimetro','cm');A('l',.001,'milimetro','mm');A('l',1609.344,'milla','mi');A('l',.3048,'pie','ft');A('l',.0254,'pulgada','in');A('l',.9144,'yarda','yd');
  A('m',1,'kilo','kilogramo','kg');A('m',.001,'gramo','g');A('m',.45359237,'libra','lb');A('m',.028349523,'onza','oz');
@@ -432,6 +444,7 @@ function bloquear(){$('#lock').hidden=false;$('#lk').value='';$('#lke').textCont
 $('#lf').onsubmit=async e=>{e.preventDefault();if((await hash($('#lk').value))===cfg.pin)$('#lock').hidden=true;else{$('#lke').textContent='PIN incorrecto.';$('#lk').value=''}};
 document.addEventListener('visibilitychange',()=>{if(document.hidden)oculto=Date.now();else if(cfg.pin&&oculto&&Date.now()-oculto>30000)bloquear()});
 if(cfg.pin)bloquear();
+
 const ap=()=>{document.body.style.fontSize=(cfg.letra||16)+'px'};ap();
 let sT;function slider(c,t,mn,mx,st,k,df,fm){const d=document.createElement('div');d.style.marginTop='14px';const v=cfg[k]??df;
  d.innerHTML='<div style="color:var(--dim);font-size:14px"></div><input type="range" min="'+mn+'" max="'+mx+'" step="'+st+'" value="'+v+'" aria-label="'+t+'">';
@@ -462,6 +475,7 @@ async function pCli(){const b=$('#s-clima .bd');b.innerHTML='<div class="vac"><p
    r.innerHTML='<b>'+(i?new Date(f+'T12:00').toLocaleDateString('es',{weekday:'short'}):'Hoy')+'</b><span>'+cond(y.weather_code[i])+'</span><span>'+Math.round(y.temperature_2m_max[i])+'° / '+Math.round(y.temperature_2m_min[i])+'°</span><em>'+(y.precipitation_probability_max[i]??0)+'%</em>';$('#dl').append(r)});$('#clr').onclick=()=>{clC=null;pCli()}}
  catch(e){b.innerHTML='<div class="vac"><p>'+(e&&e.code===1?'Negaste el permiso de ubicación. Actívalo en los permisos del sitio en Chrome y vuelve a intentar.':'No pude obtener el clima. Revisa tu conexión.')+'</p><button id="clr">Reintentar</button></div>';$('#clr').onclick=()=>{ubic=null;clC=null;pCli()}}}
 setInterval(()=>{if(scr==='centro')pCen()},60000);
+
 if(!cfg.ini){cfg.ini=Date.now();save()}
 async function datosClima(){try{const d=await datosClima0();d._t=d._t||Date.now();S.clg=JSON.stringify(d);return d}catch(e){const g=ld('clg',null);if(g){g._viejo=true;return g}throw e}}
 async function procesarCola(){if(busy||!mem.cola.length||!navigator.onLine)return;busy=true;const q=mem.cola.splice(0);save();for(const t of q)await ia(t);busy=false}
@@ -506,6 +520,8 @@ function pTie(){const b=$('#s-tiempo .bd');b.innerHTML='<div class="cd"><small>C
 function pTic(){if(!$('#cv'))return;$('#cv').textContent=mmss(cr+(crT?Date.now()-crT:0));$('#c1b').textContent=crT?'Pausar':cr?'Continuar':'Iniciar';$('#pv').textContent=pm?pm.f+' '+mmss(pm.fin-Date.now()):'Listo';$('#p1b').textContent=pm?'En curso':'Iniciar'}
 function pomo(){if(pm&&Date.now()>=pm.fin){const f=pm.f==='Enfoque';pm={f:f?'Descanso':'Enfoque',fin:Date.now()+(f?3e5:15e5)};const t=f?'Hora de descansar 5 minutos.':'A enfocarse otros 25 minutos.';say(t);notify(t);navigator.vibrate&&navigator.vibrate([300,150,300]);beep()}}
 setInterval(()=>{pomo();if(scr==='tiempo')pTic()},500);
+
+
 function pAce(){$('#s-acerca .bd').innerHTML='<div class="cd"><b style="color:var(--cy)">Jhonny 2.0</b><small>Asistente personal de Eddy</small></div><div class="cd"><small>Tus datos</small>Notas, contactos, diario, listas, hábitos, gastos y fechas se guardan solo en este teléfono.</div><div class="cd"><small>Lo que sale del teléfono</small>Tus mensajes del chat se envían a Groq para generar la respuesta. El clima usa tu ubicación y el servicio Open-Meteo. La voz y el micrófono usan los servicios de Chrome.</div><div class="cd"><small>Créditos</small>IA y fotos: Groq. Clima: Open-Meteo.</div><div class="cd"><small>Seguridad</small>Tu clave de Groq se guarda en este navegador. Si pones un PIN, se guarda cifrada con él. El PIN no cifra tus notas ni tu historial, solo bloquea la pantalla. Un PIN corto se puede adivinar con acceso al teléfono, así que usa uno largo y, si dudas, cambia tu clave en Groq. Puedes borrar todo en Ajustes.</div>'}
 $('#pml').onclick=()=>{location.href='tel:'+mem.contactos[sel].num};
 $('#pmw').onclick=()=>{location.href='https://wa.me/'+mem.contactos[sel].num.replace(/\D/g,'')};
@@ -513,18 +529,19 @@ $('#kv').onclick=()=>{const k=$('#k');k.type=k.type==='password'?'text':'passwor
 $('#kt').onclick=async()=>{const k=$('#k').value.trim()||cfg.key;if(!k)return msg('Escribe tu clave primero.');msg('Probando…');try{const r=await fetch('https://api.groq.com/openai/v1/models',{headers:{Authorization:'Bearer '+k},signal:AbortSignal.timeout(15000)});msg(r.ok?'La clave funciona.':r.status===401?'La clave no es válida.':'Groq respondió con el error '+r.status+'.')}catch(e){msg('No pude conectar. Revisa tu internet.')}};
 $('#bl').onclick=()=>{if(!cfg.pin)return msg('Primero pon un PIN.');$('#dlg').close();bloquear()};
 log.addEventListener('scroll',()=>{$('#fin').hidden=log.scrollHeight-log.scrollTop-log.clientHeight<200});$('#fin').onclick=()=>{log.scrollTop=log.scrollHeight};
+
 let fq={},ctrl=null,parado=false,edIdx=-1,pinMem=null,intentos=0,bloq=0;
 function bq(id,n,fn){const q=$('#s-'+id+' .bq');if(!q)return;q.hidden=n<=8;q.oninput=()=>{fq[id]=norm(q.value);fn()}}
 function abrirExt(u){location.href=u;setTimeout(()=>{if(!document.hidden)say('No pude abrir eso, Eddy. Revisa que la aplicación esté instalada.')},1500)}
 function indic(on){$('#go').textContent=on?'Detener':'Enviar';if(on)$('#st span').textContent='Pensando…';else net()}
-async function ia(t,p){ctrl=new AbortController();parado=false;const tm=setTimeout(()=>ctrl.abort(),9e4);indic(1);try{return await ia0(t,p)}finally{clearTimeout(tm);setTimeout(()=>{ctrl=null;indic(0)},0)}}
+async function ia(t,p){ctrl=new AbortController();parado=false;const tm=setTimeout(()=>ctrl.abort(),9e4);indic(1);try{return await ia0(t,p)}finally{clearTimeout(tm);ctrl=null;indic(0)}}
 function ok(a,f){return a.filter(x=>x&&typeof x==='object'&&f(x))}
 function sane2(){mem.datos=ok(mem.datos,x=>typeof x.texto==='string');mem.historial=ok(mem.historial,x=>(x.role==='user'||x.role==='assistant')&&typeof x.content==='string');mem.contactos=ok(mem.contactos,x=>typeof x.nombre==='string'&&typeof x.num==='string');mem.diario=ok(mem.diario,x=>typeof x.x==='string');mem.habitos=ok(mem.habitos,x=>typeof x.n==='string'&&Array.isArray(x.dias));mem.gastos=ok(mem.gastos,x=>Number.isFinite(x.m));mem.fechas=ok(mem.fechas,x=>typeof x.n==='string'&&x.d>0&&x.m>0);['compras','tareas'].forEach(k=>{mem.listas[k]=ok(mem.listas[k],x=>typeof x.t==='string')})}
 function reducir(f){return new Promise((res,no)=>{const i=new Image(),u=URL.createObjectURL(f);i.onload=()=>{const k=Math.min(1,1024/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',.8))};i.onerror=no;i.src=u})}
 $('#cam').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
  if(!cfg.key)return say('Falta la clave de Groq. Escríbela en Ajustes.');
  if(!navigator.onLine)return say('Sin conexión, Eddy. Analizar fotos necesita internet.');
- pedirTexto('¿Qué quieres saber de la foto? (ejemplo: describe lo que ves)',async q=>{if(busy||!q)return;busy=true;add('u','Foto: '+q);const el=add('b live','Analizando la foto…');indic(1);
+ pedirTexto('¿Qué quieres saber de la foto? (ejemplo: describe lo que ves)',async q=>{if(busy)return;busy=true;add('u','Foto: '+q);const el=add('b live','Analizando la foto…');indic(1);
   try{const img=await reducir(f);ctrl=new AbortController();const tm=setTimeout(()=>ctrl.abort(),9e4);
    const r=await fetch(URL_,{method:'POST',headers:{Authorization:'Bearer '+cfg.key,'Content-Type':'application/json'},body:JSON.stringify({model:cfg.vision||'qwen/qwen3.6-27b',messages:[{role:'user',content:[{type:'text',text:q+'. Responde en español, de forma breve.'},{type:'image_url',image_url:{url:img}}]}]}),signal:ctrl.signal});clearTimeout(tm);
    if(!r.ok)fail(el,r.status===401?'La clave de Groq no es válida.':r.status===429?'Se alcanzó el límite de uso de Groq. Espera un momento.':'Groq no pudo analizar la foto (error '+r.status+'). Revisa el nombre del modelo para fotos en Ajustes.');
@@ -542,13 +559,14 @@ const b64=u=>btoa(String.fromCharCode(...u)),ub=t=>Uint8Array.from(atob(t),c=>c.
 async function kdf(pin,salt){const m=await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:150000,hash:'SHA-256'},m,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
 async function cifrarClave(pin){if(!cfg.key){delete cfg.keyEnc;save();return}const sa=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12)),k=await kdf(pin,sa),c=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,new TextEncoder().encode(cfg.key)));cfg.keyEnc={s:b64(sa),i:b64(iv),c:b64(c)};save()}
 async function descifrarClave(pin){if(!cfg.keyEnc)return;try{const k=await kdf(pin,ub(cfg.keyEnc.s));cfg.key=new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:ub(cfg.keyEnc.i)},k,ub(cfg.keyEnc.c)))}catch(e){}}
-$('#sv').onclick=()=>{const nk=$('#k').value.trim();const guardar=()=>{cfg.key=nk;cfg.model=$('#mo').value.trim()||'openai/gpt-oss-120b';cfg.vision=$('#vm').value.trim();(cfg.pin&&pinMem?cifrarClave(pinMem):Promise.resolve()).then(()=>{save();msg('Guardado.');if(cfg.key)setTimeout(()=>$('#dlg').close(),600)})};if(cfg.pin&&!pinMem){ver(()=>guardar())}else guardar()};
+$('#sv').onclick=()=>{cfg.key=$('#k').value.trim();cfg.model=$('#mo').value.trim()||'openai/gpt-oss-120b';cfg.vision=$('#vm').value.trim();(cfg.pin&&pinMem?cifrarClave(pinMem):Promise.resolve()).then(()=>{save();msg('Guardado.');if(cfg.key)setTimeout(()=>$('#dlg').close(),600)})};
 $('#cfg').onclick=()=>{$('#k').value=cfg.key||'';$('#mo').value=cfg.model;$('#vm').value=cfg.vision||'';msg('');$('#dlg').showModal()};
 $('#pin').onclick=()=>ver(()=>pedirPin('Nuevo PIN (4 a 8 números)',a=>pedirPin('Repite el PIN',async b=>{if(a!==b)return msg('Los PIN no coinciden.');cfg.pin=await hash(a);pinMem=a;await cifrarClave(a);save();msg('PIN guardado. Tu clave de Groq ahora se guarda cifrada.')})));
 $('#pinq').onclick=()=>{if(!cfg.pin)return msg('No tienes PIN.');ver(()=>{delete cfg.pin;delete cfg.keyEnc;pinMem=null;save();msg('PIN quitado.')})};
 $('#lf').onsubmit=async e=>{e.preventDefault();if(Date.now()<bloq)return $('#lke').textContent='Demasiados intentos. Espera 30 segundos.';const v=$('#lk').value;if((await hash(v))===cfg.pin){intentos=0;pinMem=v;await descifrarClave(v);$('#lock').hidden=true}else{$('#lke').textContent='PIN incorrecto.';$('#lk').value='';if(++intentos>=5){bloq=Date.now()+3e4;intentos=0}}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape')cerrarMenu()});
 ['cf','pd','tx','ad','ma','dlg'].forEach(i=>{const d=$('#'+i),h=d.querySelector('h2');if(h){h.id=h.id||'h_'+i;d.setAttribute('aria-labelledby',h.id)}});
+
 let drHist=false;
 function fondo(){const b=$('#bg'),f=cfg.fondo;b.className=(f&&f!=='ninguno'?'p-'+f:'')+(cfg.mov?' mov':'');document.documentElement.style.setProperty('--bga',(cfg.bgi||16)+'%')}
 fondo();
@@ -575,6 +593,7 @@ document.addEventListener('touchstart',e=>{const t=e.touches[0];tx0=t.clientX;ty
 document.addEventListener('touchend',e=>{const t=e.changedTouches[0],dx=t.clientX-tx0,dy=t.clientY-ty0;if(Math.abs(dx)<70||Math.abs(dx)<1.5*Math.abs(dy))return;
  const o=document.body.classList.contains('dro');
  if(o&&dx<0)dr(false);else if(!o&&dx>0&&!scr&&!e.target.closest('#chips,dialog,#lock,#intro')&&!document.querySelector('dialog[open]'))dr(true)},{passive:true});
+
 function nid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
 function act(){let c=mem.chats.find(x=>x.id===mem.ca);if(!c){c=mem.chats[mem.chats.length-1];if(!c){c={id:nid(),titulo:'Nuevo chat',t:Date.now(),msgs:[]};mem.chats.push(c)}mem.ca=c.id}return c}
 function migrar(){
@@ -584,6 +603,7 @@ function migrar(){
   if(!mem.chats.length&&h.length){const c0=cfg.corte||0;[h.filter(x=>x.t<c0),h.filter(x=>x.t>=c0)].forEach(m=>{if(m.length)mem.chats.push({id:nid(),titulo:(m.find(x=>x.role==='user')||m[0]).content.slice(0,32),t:m[m.length-1].t||0,msgs:m})})}}
  if(!Object.getOwnPropertyDescriptor(mem,'historial'))Object.defineProperty(mem,'historial',{get(){return act().msgs},set(v){act().msgs=v},enumerable:false,configurable:true});
  act()}
+/*FINCHATS*/
 function recargar(){log.innerHTML='';const c=act();c.msgs.slice(-30).forEach(h=>{const e=add(h.role==='user'?'u':'b',h.content);e.dataset.h=new Date(h.t).toLocaleTimeString('es',{hour:'numeric',minute:'2-digit',hour12:true})});say(c.msgs.length?'Chat abierto: '+c.titulo:'Chat nuevo. ¿En qué te ayudo, Eddy?');down(true)}
 function nuevoChat(){if(act().msgs.length){const c={id:nid(),titulo:'Nuevo chat',t:Date.now(),msgs:[]};mem.chats.push(c);mem.ca=c.id;save()}recargar()}
 let chSel=false;const chS=new Set();
@@ -600,5 +620,5 @@ function pCha(){const b=$('#s-chats .bd');b.innerHTML='';$('#chsel').textContent
   else r.onclick=()=>{mem.ca=c.id;save();recargar();history.back()};b.append(r)})}
 $('#chsel').onclick=()=>{chSel=!chSel;chS.clear();pCha()};
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
-sane();sane2();migrar();tick();
+tick();
 </script></body></html>
