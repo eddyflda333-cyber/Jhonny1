@@ -1,7 +1,9 @@
+
 package com.jhonny.bridge;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Build;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.webkit.JavascriptInterface;
@@ -10,6 +12,8 @@ import android.webkit.WebViewClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.SslErrorHandler;
+import android.webkit.ServiceWorkerController;
+import android.webkit.ServiceWorkerWebSettings;
 import android.net.http.SslError;
 import android.widget.Toast;
 
@@ -31,7 +35,6 @@ public class MainActivity extends Activity {
             }
 
             runOnUiThread(() -> launchPackage(pkg));
-
             return "Solicitando apertura";
         }
     }
@@ -43,17 +46,13 @@ public class MainActivity extends Activity {
             case "lark":
             case "lark player":
                 return "com.dywx.larkplayer";
-
             case "whatsapp":
                 return "com.whatsapp";
-
             case "calculadora":
                 return "com.google.android.calculator";
-
             case "calendar":
             case "calendario":
                 return "com.google.android.calendar";
-
             default:
                 return null;
         }
@@ -84,6 +83,18 @@ public class MainActivity extends Activity {
     public void onCreate(Bundle state) {
         super.onCreate(state);
 
+        // Configuración de Service Workers
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            ServiceWorkerWebSettings swSettings =
+                ServiceWorkerController.getInstance()
+                    .getServiceWorkerWebSettings();
+
+            swSettings.setBlockNetworkLoads(false);
+            swSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
+            swSettings.setAllowFileAccess(false);
+            swSettings.setAllowContentAccess(false);
+        }
+
         webView = new WebView(this);
 
         WebSettings settings = webView.getSettings();
@@ -94,6 +105,7 @@ public class MainActivity extends Activity {
         settings.setMixedContentMode(
             WebSettings.MIXED_CONTENT_NEVER_ALLOW
         );
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
         webView.addJavascriptInterface(
             new AndroidBridge(),
