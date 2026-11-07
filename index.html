@@ -358,7 +358,7 @@ async function local(o){o=o.replace(/^[¿¡\s]+|[?!\s]+$/g,'');
  if(/bateria/.test(n)){try{const b=await navigator.getBattery();return 'Batería al '+Math.round(b.level*100)+' por ciento, '+(b.charging?'cargando':'sin cargar')+'.'}catch(e){return 'No pude leer la batería, Eddy.'}}
  if(/\bvibra/.test(n))return navigator.vibrate&&navigator.vibrate(500)?'Listo, Eddy.':'Este dispositivo no permite vibrar desde el navegador.';
  if(/^abre (la )?camara/.test(n)){$('#cam').click();return 'Abriendo la cámara.'}
- if(n.startsWith('abre ')){const a=n.slice(5).trim(),p=APPS[a];if(!p)return w<=3?'No tengo registrada esa aplicación, Eddy.':null;confirmar('¿Abrir '+a+'?',()=>abrirExt('intent://#Intent;package='+p+';end'),'Abrir','Abrir aplicación');return 'Esperando tu confirmación.'}
+ if(n.startsWith('abre ')){const a=n.slice(5).trim(),p=APPS[a];if(!p)return w<=3?'No tengo registrada esa aplicación, Eddy.':null;confirmar('¿Abrir '+a+'?',()=>abrirExt('intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package='+p+';end'),'Abrir','Abrir aplicación');return 'Esperando tu confirmación.'}
  return null}
 
 function fail(e,t){e.setAttribute('role','alert');e.classList.remove('live');e.classList.add('er');e.textContent=t}
