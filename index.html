@@ -797,5 +797,29 @@ if('serviceWorker' in navigator){
   console.info('Jhonny: modo sin conexión preparado.',reg.scope);
  }).catch(err=>console.warn('No se pudo activar el modo sin conexión:',err));
 }
+// Jhonny: aviso cuando hay una nueva versión
+if ('serviceWorker' in navigator) {
+  const yaEstabaControlado = !!navigator.serviceWorker.controller;
+
+  if (yaEstabaControlado) {
+    let avisoMostrado = false;
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (avisoMostrado) return;
+      avisoMostrado = true;
+
+      if (confirm('¡Hay una nueva versión de Jhonny! ¿Quieres actualizar ahora?')) {
+        location.reload();
+      }
+    });
+  }
+
+  navigator.serviceWorker.ready.then(reg => {
+    reg.update().catch(() => {});
+    setInterval(() => {
+      reg.update().catch(() => {});
+    }, 60000);
+  });
+}
 tick();
 </script></body></html>
