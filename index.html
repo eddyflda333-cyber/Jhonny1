@@ -833,6 +833,12 @@ if ('serviceWorker' in navigator) {
   try {
     const registros = await navigator.serviceWorker.getRegistrations();
     const activo = !!navigator.serviceWorker.controller;
+const registro = registros[0];
+mensaje += '\nActualización esperando: ' + (!!registro?.waiting ? 'SÍ' : 'NO');
+mensaje += '\nNueva versión instalándose: ' + (!!registro?.installing ? 'SÍ' : 'NO');
+
+mensaje += '\nActualización esperando: ' + (esperando ? 'SÍ' : 'NO');
+mensaje += '\nNueva versión instalándose: ' + (instalando ? 'SÍ' : 'NO');
 
     mensaje += 'Service Worker: COMPATIBLE\n';
     mensaje += 'Registros encontrados: ' + registros.length + '\n';
