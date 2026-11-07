@@ -1,5 +1,5 @@
 /* Jhonny PWA - caché para abrir la aplicación sin internet */
-const CACHE_NAME = 'jhonny-offline-v2';
+const CACHE_NAME = 'jhonny-offline-v3';
 const APP_SHELL = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', event => {
