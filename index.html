@@ -799,26 +799,26 @@ if('serviceWorker' in navigator){
 }
 // Jhonny: aviso cuando hay una nueva versión
 if ('serviceWorker' in navigator) {
-  const yaEstabaControlado = !!navigator.serviceWorker.controller;
+  let yaEstabaControlado = !!navigator.serviceWorker.controller;
+  let avisoMostrado = false;
 
-  if (yaEstabaControlado) {
-    let avisoMostrado = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!yaEstabaControlado) {
+      yaEstabaControlado = true;
+      return;
+    }
 
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (avisoMostrado) return;
-      avisoMostrado = true;
+    if (avisoMostrado) return;
+    avisoMostrado = true;
 
-      if (confirm('¡Hay una nueva versión de Jhonny! ¿Quieres actualizar ahora?')) {
-        location.reload();
-      }
-    });
-  }
+    if (confirm('¡Hay una nueva versión de Jhonny! ¿Quieres actualizar ahora?')) {
+      location.reload();
+    }
+  });
 
   navigator.serviceWorker.ready.then(reg => {
     reg.update().catch(() => {});
-    setInterval(() => {
-      reg.update().catch(() => {});
-    }, 60000);
+    setInterval(() => reg.update().catch(() => {}), 60000);
   });
 }
 tick();
