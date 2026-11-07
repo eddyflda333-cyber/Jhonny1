@@ -408,7 +408,7 @@ $('#bn').onclick=()=>confirmar('¿Seguro que quieres borrar todas las notas?',()
 $('#bh').onclick=()=>confirmar('¿Seguro que quieres borrar los mensajes de este chat?',()=>{mem.historial=[];save();log.innerHTML='';msg('Historial borrado.')});
 $('#cam').onchange=e=>{if(e.target.files[0])say('Foto capturada, Eddy. No se guarda en Jhonny.');e.target.value=''};
 
-const net=()=>{$('#st').classList.toggle('off',!navigator.onLine);$('#st span').textContent=!navigator.onLine?'Sin conexión':cfg.estudio?'Modo estudio':'En línea'};
+const net=()=>{$('#st').classList.toggle('off',!navigator.onLine);$('#st span').textContent=!navigator.onLine?'Sin internet · modo local':cfg.estudio?'Modo estudio':'En línea'};
 addEventListener('online',net);addEventListener('offline',net);net();
 mem.historial.slice(-6).forEach(h=>{const e=add(h.role==='user'?'u':'b',h.content);e.dataset.h=new Date(h.t).toLocaleTimeString('es',{hour:'numeric',minute:'2-digit',hour12:true})});
 say(mem.historial.length?'De vuelta, Eddy.':'Buenas, Eddy. Jhonny en línea.');
@@ -792,6 +792,10 @@ function pBib(){const b=$('#s-biblio .bd'),cl=ld('clg',null);
 document.querySelectorAll('.scr').forEach(sc=>{const bar=sc.querySelector('.bar'),h=bar.querySelector('h2'),bk=bar.querySelector('.bk'),t=document.createElement('div');t.className='pt';t.textContent=h.textContent;h.textContent='JHONNY';bk.innerHTML=CHEV;bk.setAttribute('aria-label','Atrás');bar.after(t)});
 $('#clip').onclick=()=>$('#cam').click();
 titl();
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+if('serviceWorker' in navigator){
+ navigator.serviceWorker.register('./sw.js').then(reg=>{
+  console.info('Jhonny: modo sin conexión preparado.',reg.scope);
+ }).catch(err=>console.warn('No se pudo activar el modo sin conexión:',err));
+}
 tick();
 </script></body></html>
