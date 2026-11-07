@@ -821,5 +821,27 @@ if ('serviceWorker' in navigator) {
     setInterval(() => reg.update().catch(() => {}), 60000);
   });
 }
+// Diagnóstico del Service Worker de Jhonny
+(async function() {
+  let mensaje = 'DIAGNÓSTICO DE JHONNY\n\n';
+
+  if (!('serviceWorker' in navigator)) {
+    alert(mensaje + 'Service Worker: NO compatible con este navegador.');
+    return;
+  }
+
+  try {
+    const registros = await navigator.serviceWorker.getRegistrations();
+    const activo = !!navigator.serviceWorker.controller;
+
+    mensaje += 'Service Worker: COMPATIBLE\n';
+    mensaje += 'Registros encontrados: ' + registros.length + '\n';
+    mensaje += 'Controlando la página: ' + (activo ? 'SÍ' : 'NO');
+
+    alert(mensaje);
+  } catch (error) {
+    alert(mensaje + 'Error: ' + error.message);
+  }
+})();
 tick();
 </script></body></html>
